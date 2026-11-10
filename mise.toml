@@ -1,0 +1,186 @@
+# Единый тулчейн проекта: одни и те же версии у разработчиков и в CI.
+# Установка: `mise install`. Все проверки: `mise run check`.
+
+[tools]
+java = "temurin-25.0.5+8.0.LTS"
+node = "24.22.2"
+# git-хуки и проверки
+hk = "2.11.0"
+pkl = "0.32.2"
+# секреты, орфография, Markdown, GitHub Actions
+betterleaks = "1.9.0"
+typos = "1.51.1"
+rumdl = "0.3.2"
+jactionlint = "2.4.0"
+shellcheck = "0.11.0"
+# ответы живого сервера по контракту (test:contract); uv ставит Python-инструменты из pypi:
+uv = "0.13.6"
+"pypi:schemathesis" = "4.33.1"
+# известные уязвимости в зависимостях (запускается по расписанию, не входит в check)
+osv-scanner = "2.7.0"
+
+[env]
+# git-хуки hk запускают инструменты через `mise x` с версиями из этого файла
+HK_MISE = "1"
+
+# ---------- установка ----------
+
+[tasks.setup]
+description = "Установить зависимости и git-хуки (один раз после клонирования)"
+depends = ["deps"]
+run = "hk install --mise"
+
+[tasks.deps]
+description = "Установить зависимости: инструменты репозитория (commitlint), контракт, фронтенд, браузер Playwright"
+depends = ["deps:root", "deps:contract", "deps:frontend", "deps:e2e"]
+
+[tasks."deps:root"]
+run = "npm ci"
+
+[tasks."deps:contract"]
+dir = "contract"
+run = "npm ci"
+
+[tasks."deps:frontend"]
+dir = "frontend"
+run = "npm ci"
+
+[tasks."deps:e2e"]
+description = "Браузер для Playwright (test:e2e); --with-deps ставит системные зависимости в CI"
+dir = "frontend"
+depends = ["deps:frontend"]
+run = "npx playwright install --with-deps chromium"
+
+# ---------- проверки ----------
+
+[tasks.check]
+description = "Все проверки: генерация, линтеры, типы, тесты, сборка, контракт, e2e. Эту же команду запускает CI"
+# последовательно: Maven-шаги линтеров и тесты бэкенда пишут в один каталог target/;
+# test:e2e нужен собранный jar и собранный фронтенд, поэтому идёт после build
+run = [
+  { task = "generate:check" },
+  { task = "lint" },
+  { task = "test" },
+  { task = "build" },
+  { task = "test:contract" },
+  { task = "test:e2e" },
+]
+
+[tasks.lint]
+description = "Все линтеры и форматтеры в режиме проверки (hk check --all)"
+run = "hk check --all"
+
+[tasks."lint:commits"]
+description = "Проверить сообщения коммитов (Conventional Commits): mise run lint:commits -- --from origin/main"
+run = "npx --no-install commitlint --verbose"
+
+[tasks.audit]
+description = "Известные уязвимости в зависимостях (OSV-Scanner). В CI запускается раз в неделю, а не в check"
+# Бэкенд проверяется по SBOM от Maven: в pom.xml версии наследуются из Spring Boot parent,
+# и OSV-Scanner их сам не разрешает. Файлы перечислены явно: при обходе `-r .` сканер
+# пропускает SBOM, потому что backend/target/ в .gitignore. Новый lockfile добавьте сюда.
+run = [
+  "cd backend && ./mvnw -q -B cyclonedx:makeBom",
+  "osv-scanner scan source backend/target/calendar.cdx.json package-lock.json contract/package-lock.json frontend/package-lock.json",
+]
+
+[tasks.fix]
+description = "Безопасные автоисправления: форматирование, пробелы, Markdown"
+run = "hk fix --all"
+
+# ---------- генерация из контракта ----------
+
+[tasks.generate]
+description = "Генерация из TypeSpec-контракта (contract/main.tsp): OpenAPI (contract/openapi.yaml) и SDK фронтенда (frontend/src/api/generated/). Серверные интерфейсы и DTO Spring генерируются отдельно, при сборке Maven (backend/pom.xml, backend/target/generated-sources/openapi/) — руками не правятся ни те, ни эти (см. AGENTS.md)"
+dir = "contract"
+run = "npm run generate"
+
+[tasks."generate:check"]
+description = "Повторяет генерацию и падает, если сгенерированное расходится с закоммиченным"
+depends = ["generate"]
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+drift=$(git status --porcelain -- contract/openapi.yaml frontend/src/api/generated)
+if [ -n "$drift" ]; then
+  echo "Сгенерированное (contract/openapi.yaml, frontend/src/api/generated/) расходится с закоммиченным." >&2
+  echo "Запустите mise run generate и закоммитьте результат:" >&2
+  echo "$drift" >&2
+  exit 1
+fi
+'''
+
+[tasks.test]
+description = "Тесты фронтенда и бэкенда"
+depends = ["test:frontend", "test:backend"]
+
+[tasks."test:frontend"]
+dir = "frontend"
+run = "npm test"
+
+[tasks."test:backend"]
+dir = "backend"
+run = "./mvnw -B -q test"
+
+[tasks."test:contract"]
+description = "Schemathesis сверяет ответы живого сервера (собранный jar) с contract/openapi.yaml"
+depends = ["build:backend"]
+# Свежий процесс на свободном порту (не 8080 из dev и не 8099 из e2e) с пустым хранилищем.
+# positive_data_acceptance исключена: она ждёт 2xx на любой валидный по схеме запрос, а бизнес-
+# правила (слот в 9:00–18:00 и в окне записи, уникальное название, свободный интервал) схема не
+# выражает, и сервер законно отвечает на них 400/404/409. Остальные проверки (статусы, Content-Type,
+# схемы ответов, отказ на невалидные данные, отсутствие 5xx) включены все.
+# --generation-deterministic: одинаковые запросы при каждом запуске, check не мигает.
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+port=8098
+jar=$(ls backend/target/*.jar | grep -v -- '-sources.jar$' | head -n1)
+PORT=$port java -jar "$jar" > backend/target/test-contract-server.log 2>&1 &
+server=$!
+trap 'kill "$server" 2>/dev/null || true' EXIT
+for _ in $(seq 60); do
+  if curl -sf "http://localhost:$port/actuator/health" > /dev/null; then break; fi
+  if ! kill -0 "$server" 2>/dev/null; then
+    echo "Сервер не запустился, лог: backend/target/test-contract-server.log" >&2
+    exit 1
+  fi
+  sleep 1
+done
+schemathesis run contract/openapi.yaml --url "http://localhost:$port" \
+  --checks all --exclude-checks positive_data_acceptance \
+  --generation-deterministic --max-examples 100
+'''
+
+[tasks."test:e2e"]
+description = "Playwright против собранного бэкенда (jar) и собранного фронтенда"
+dir = "frontend"
+# нужен собранный jar и dist/, поэтому явная зависимость, а не только порядок в check
+depends = ["build"]
+run = "npx playwright test"
+
+[tasks.build]
+description = "Production-сборка фронтенда и jar бэкенда"
+depends = ["build:frontend", "build:backend"]
+
+[tasks."build:frontend"]
+dir = "frontend"
+run = "npm run build"
+
+[tasks."build:backend"]
+dir = "backend"
+run = "./mvnw -B -q package -DskipTests"
+
+# ---------- разработка ----------
+
+[tasks.dev]
+description = "Бэкенд (:8080) и фронтенд (:5173) параллельно; Ctrl+C останавливает оба"
+depends = ["dev:backend", "dev:frontend"]
+
+[tasks."dev:backend"]
+dir = "backend"
+run = "./mvnw spring-boot:run"
+
+[tasks."dev:frontend"]
+dir = "frontend"
+run = "npm run dev"

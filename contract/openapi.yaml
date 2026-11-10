@@ -1,0 +1,327 @@
+openapi: 3.1.0
+info:
+  title: Календарь звонков
+  description: |-
+    Календарь звонков: контракт API.
+
+    Источник правды — этот файл (см. docs/specification.md, разделы «API» и
+    «Контракт и генерация»). Код на бэкенде и фронтенде описывает то же самое
+    API руками ровно там, где генератор не дотягивает (см. ADR в docs/adr/ и
+    AGENTS.md о запрете ручной правки сгенерированных файлов) — но форма
+    запросов, ответов и ошибок всегда выводится из этого контракта.
+
+    Термины — по GLOSSARY.md: Владелец, Гость, Тип встречи, Запись, Слот, Окно записи.
+  version: 0.0.0
+tags:
+  - name: MeetingTypes
+  - name: Slots
+  - name: Bookings
+paths:
+  /api/bookings:
+    get:
+      operationId: Bookings_list
+      description: Предстоящие записи владельца, по возрастанию старта, без пагинации.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+      tags:
+        - Bookings
+    post:
+      operationId: Bookings_create
+      description: Бронирование встречи.
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: '400 — ошибки валидации: карта «поле → сообщение».'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '404':
+          description: 404 — ссылка на несуществующий id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+        '409':
+          description: 409 — запрошенный интервал пересекается с существующей записью.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictErrorResponse'
+      tags:
+        - Bookings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewBooking'
+  /api/meeting-types:
+    get:
+      operationId: MeetingTypes_list
+      description: Список типов встреч.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MeetingType'
+      tags:
+        - MeetingTypes
+    post:
+      operationId: MeetingTypes_create
+      description: Создание типа встречи.
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingType'
+        '400':
+          description: '400 — ошибки валидации: карта «поле → сообщение».'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+      tags:
+        - MeetingTypes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewMeetingType'
+  /api/slots:
+    get:
+      operationId: Slots_list
+      description: |-
+        Слоты дня для типа встречи. Дата вне окна записи — пустой массив, не ошибка;
+        прошедшие слоты не возвращаются.
+      parameters:
+        - name: meetingTypeId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          explode: false
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Slot'
+        '400':
+          description: '400 — ошибки валидации: карта «поле → сообщение».'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '404':
+          description: 404 — ссылка на несуществующий id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      tags:
+        - Slots
+components:
+  schemas:
+    Booking:
+      type: object
+      required:
+        - id
+        - start
+        - guestName
+        - guestEmail
+        - note
+        - meetingType
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+        start:
+          type: string
+          format: date-time
+          description: ISO 8601 с offset пояса владельца; конец вычисляется из длительности типа.
+        guestName:
+          type: string
+          maxLength: 100
+        guestEmail:
+          type: string
+          pattern: ^[^\s@]+@[^\s@]+\.[^\s@]+$
+        note:
+          anyOf:
+            - type: string
+            - type: 'null'
+          maxLength: 1000
+        meetingType:
+          $ref: '#/components/schemas/BookingMeetingType'
+      description: Забронированная гостем встреча.
+    BookingMeetingType:
+      type: object
+      required:
+        - id
+        - name
+        - durationMinutes
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        durationMinutes:
+          type: integer
+          format: int32
+      description: Тип встречи, вложенный в запись (снимок полей не хранится — это актуальный тип).
+    ConflictErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+      description: 409 — запрошенный интервал пересекается с существующей записью.
+    MeetingDuration:
+      type: number
+      enum:
+        - 15
+        - 30
+        - 60
+      description: Допустимые длительности типа встречи, в минутах.
+    MeetingType:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - durationMinutes
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+          description: Непустое, до 100 символов; уникально без учёта регистра и пробелов по краям.
+        description:
+          anyOf:
+            - type: string
+            - type: 'null'
+          maxLength: 1000
+          description: До 1000 символов.
+        durationMinutes:
+          $ref: '#/components/schemas/MeetingDuration'
+          description: 'Минуты: 15, 30 или 60.'
+      description: 'Тип встречи: шаблон, который создаёт владелец. Не редактируется и не удаляется.'
+    NewBooking:
+      type: object
+      required:
+        - meetingTypeId
+        - start
+        - guestName
+        - guestEmail
+      properties:
+        meetingTypeId:
+          type: integer
+          format: int64
+        start:
+          type: string
+          format: date-time
+          description: 'Старт слота: сетка 15 минут, внутри 9:00–18:00 владельца, в окне записи, не в прошлом.'
+        guestName:
+          type: string
+          maxLength: 100
+          pattern: .*\S.*
+        guestEmail:
+          type: string
+          pattern: ^[^\s@]+@[^\s@]+\.[^\s@]+$
+        note:
+          type: string
+          maxLength: 1000
+      description: Данные для бронирования встречи гостем.
+    NewMeetingType:
+      type: object
+      required:
+        - name
+        - durationMinutes
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          pattern: .*\S.*
+        description:
+          type: string
+          maxLength: 1000
+        durationMinutes:
+          $ref: '#/components/schemas/MeetingDuration'
+      description: Данные для создания типа встречи.
+    NotFoundErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+      description: 404 — ссылка на несуществующий id.
+    Slot:
+      type: object
+      required:
+        - start
+        - status
+      properties:
+        start:
+          type: string
+          format: date-time
+          description: ISO 8601 с offset пояса владельца.
+        status:
+          $ref: '#/components/schemas/SlotStatus'
+      description: 'Слот сетки записи: старт и статус занятости.'
+    SlotStatus:
+      type: string
+      enum:
+        - free
+        - busy
+      description: Статус слота для гостя.
+    ValidationErrorResponse:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            type: string
+      description: '400 — ошибки валидации: карта «поле → сообщение».'

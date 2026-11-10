@@ -1,0 +1,11 @@
+# В контекст сборки попадают только исходники приложений
+*
+!backend/
+!frontend/
+# из контракта бэкенд генерирует интерфейсы и DTO при сборке Maven
+!contract/openapi.yaml
+backend/target/
+backend/HELP.md
+frontend/node_modules/
+frontend/dist/
+**/.DS_Store

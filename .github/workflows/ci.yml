@@ -1,0 +1,57 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - '**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # полная история нужна, чтобы проверить сообщения всех коммитов из push
+          fetch-depth: 0
+
+      # Ставит java, node, hk и линтеры строго по версиям из mise.toml
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.npm
+          key: deps-${{ runner.os }}-${{ hashFiles('backend/pom.xml', 'frontend/package-lock.json') }}
+          restore-keys: deps-${{ runner.os }}-
+
+      - run: mise run deps
+
+      # Сообщения коммитов (Conventional Commits). Проверяются только коммиты из этого push,
+      # поэтому старые коммиты до внедрения commitlint не мешают.
+      - name: commitlint
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            from="$BEFORE"
+          else
+            # новая ветка или force push: проверяем коммиты, которых нет в main
+            from=$(git merge-base origin/main HEAD)
+          fi
+          if [ "$(git rev-parse "$from")" = "$(git rev-parse HEAD)" ]; then
+            echo "Новых коммитов нет"
+            exit 0
+          fi
+          mise run lint:commits -- --from "$from" --to HEAD
+
+      - run: mise run check

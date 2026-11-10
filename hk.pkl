@@ -1,0 +1,107 @@
+amends "package://github.com/jdx/hk/releases/download/v2.11.0/hk@2.11.0#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.11.0/hk@2.11.0#/Builtins.pkl"
+
+// Три уровня проверок (см. https://github.com/mokevnin/dev-quality-gates/blob/main/docs/patterns.md):
+// pre-commit — быстрые проверки изменённых файлов,
+// pre-push   — проверки целых частей проекта, которых касается push,
+// check      — всё сразу; его запускает `mise run check` локально и в CI.
+
+// показывать все находки сразу, а не только первую
+fail_fast = false
+
+local fast = new Mapping<String, Step> {
+  // гигиена файлов; hexlet-check.yml генерирует Хекслет, его нельзя редактировать
+  ["trailing-whitespace"] = (Builtins.trailing_whitespace) {
+    exclude = List(".github/workflows/hexlet-check.yml")
+  }
+  ["newlines"] = (Builtins.newlines) {
+    exclude = List(".github/workflows/hexlet-check.yml")
+  }
+  ["merge-conflict"] = Builtins.check_merge_conflict
+  ["large-files"] = Builtins.check_added_large_files
+  // секреты, орфография, Markdown, GitHub Actions
+  ["betterleaks"] = Builtins.betterleaks
+  ["typos"] = Builtins.typos
+  ["rumdl"] = Builtins.rumdl
+  ["jactionlint"] = Builtins.jactionlint
+  // фронтенд: форматирование и линтер
+  ["oxfmt"] {
+    dir = "frontend"
+    glob = List("**/*.{js,cjs,mjs,ts,tsx,json}")
+    // src/api/generated — вывод mise run generate (@hey-api/openapi-ts), руками не правится
+    // и не переформатируется: см. AGENTS.md
+    exclude = List("package-lock.json", "src/api/generated/**")
+    check = "npx oxfmt --check {{files}}"
+    fix = "npx oxfmt {{files}}"
+  }
+  // бэкенд: форматирование Java (google-java-format через Spotless)
+  ["spotless"] {
+    dir = "backend"
+    glob = List("**/*.java")
+    check = "./mvnw -q -B spotless:check"
+    fix = "./mvnw -q -B spotless:apply"
+  }
+  ["oxlint"] {
+    dir = "frontend"
+    glob = List("**/*.{js,cjs,mjs,ts,tsx}")
+    exclude = List("src/api/generated/**")
+    check = "npx oxlint --deny-warnings {{files}}"
+    depends = List("oxfmt")
+  }
+}
+
+local slow = new Mapping<String, Step> {
+  // фронтенд целиком: типы и неиспользуемые файлы/зависимости
+  ["tsc"] {
+    dir = "frontend"
+    glob = List("**/*.{ts,tsx,json}")
+    check = "npm run --silent typecheck"
+  }
+  ["knip"] {
+    dir = "frontend"
+    glob = List("**/*.{js,cjs,mjs,ts,tsx,json}")
+    check = "npm run --silent knip"
+  }
+  // бэкенд: Checkstyle (стиль) и Error Prone (баг-паттерны при компиляции)
+  ["checkstyle"] {
+    dir = "backend"
+    glob = List("**/*.java", "config/checkstyle/*.xml")
+    check = "./mvnw -q -B checkstyle:check"
+  }
+  ["error-prone"] {
+    dir = "backend"
+    glob = List("**/*.java", "pom.xml")
+    check = "./mvnw -q -B -Dcheckstyle.skip compile test-compile"
+    depends = List("checkstyle")
+  }
+}
+
+hooks {
+  ["pre-commit"] {
+    fix = true
+    stage = true
+    stash = "git"
+    steps = fast
+  }
+  // сообщение коммита в формате Conventional Commits (правила в .commitlintrc.json)
+  ["commit-msg"] {
+    steps {
+      ["commitlint"] {
+        check = "npx --no-install commitlint --edit {{commit_msg_file}}"
+      }
+    }
+  }
+  ["pre-push"] {
+    steps = slow
+  }
+  ["check"] {
+    steps {
+      ...fast
+      ...slow
+    }
+  }
+  ["fix"] {
+    fix = true
+    steps = fast
+  }
+}

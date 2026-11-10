@@ -1,29 +1,139 @@
 # Календарь звонков (продолжение)
 
-
 [![hexlet-check](https://github.com/iriss22/ai-for-developers-project-387/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/iriss22/ai-for-developers-project-387/actions)
 
 Интегрируйте работу агентов в GitHub проект
 
-Учебный проект Хекслета: https://ru.hexlet.io/programs/ai-for-developers
-Как это должно работать: https://files.hexlet.app/a/2ipc5m
+Сервис для бронирования календаря, разработанный совместно с ИИ.
+
+Учебный проект Хекслета: <https://ru.hexlet.io/programs/ai-for-developers>
+Как это должно работать: <https://files.hexlet.app/a/2ipc5m>
+
+## Исходная спецификация и решения
+
+Приложение перенесено из [проекта 386](https://github.com/iriss22/ai-for-developers-project-386). Текущие задачи ведутся в [трекере проекта 387](https://github.com/iriss22/ai-for-developers-project-387/issues).
+
+- Спецификация MVP: [локальная копия](docs/specification.md), [исходная спецификация](https://github.com/iriss22/ai-for-developers-project-386/blob/main/docs/specification.md).
+- [Карта решений и обсуждения первого проекта](https://github.com/iriss22/ai-for-developers-project-386/issues/1). Номера тикетов в исходной спецификации относятся к проекту 386.
+- Словарь: [локальная копия](GLOSSARY.md), [исходный словарь](https://github.com/iriss22/ai-for-developers-project-386/blob/main/GLOSSARY.md).
+- Хранение в памяти: [ADR-0001](docs/adr/0001-in-memory-storage.md), [исходное решение](https://github.com/iriss22/ai-for-developers-project-386/blob/main/docs/adr/0001-in-memory-storage.md).
+- Границы MVP: [ADR-0002](docs/adr/0002-mvp-scope-single-owner-no-auth.md), [исходное решение](https://github.com/iriss22/ai-for-developers-project-386/blob/main/docs/adr/0002-mvp-scope-single-owner-no-auth.md).
 
 ## Стек
 
-- Разное
+**Бэкенд** (`backend/`):
+
+- Java 25
+- Spring Boot 4.1 (Spring Web MVC, Validation, Actuator, DevTools)
+- Maven (через Maven Wrapper `mvnw`)
+- JUnit 5, MockMvc
+
+**Фронтенд** (`frontend/`):
+
+- TypeScript, React 19
+- Vite (dev-сервер и сборка)
+- Mantine (UI-компоненты)
+- Vitest, React Testing Library, jsdom (тесты)
+
+**Тулчейн и проверки качества** (подобраны по [dev-quality-gates](https://github.com/mokevnin/dev-quality-gates)):
+
+| Инструмент | Что проверяет | Конфиг |
+|---|---|---|
+| [mise](https://mise.jdx.dev) | версии Java, Node и всех инструментов, задачи проекта | `mise.toml` |
+| [hk](https://hk.jdx.dev) | запуск проверок в git-хуках и в CI | `hk.pkl` |
+| Spotless (google-java-format) | форматирование Java: стиль Google, отступ 2 пробела | `backend/pom.xml` |
+| Checkstyle | стиль Java-кода | `backend/config/checkstyle/checkstyle.xml` |
+| Error Prone | баг-паттерны Java при компиляции | `backend/pom.xml` |
+| oxlint | линтер TypeScript/React | `frontend/.oxlintrc.json` |
+| oxfmt | форматирование TypeScript/JSON | `frontend/.oxfmtrc.json` |
+| tsc | проверка типов | `frontend/tsconfig*.json` |
+| Knip | неиспользуемые файлы, экспорты и зависимости фронтенда | — |
+| Betterleaks | секреты в коде | — |
+| typos | опечатки в коде и документации | — |
+| rumdl | Markdown | `.rumdl.toml` |
+| jactionlint, ShellCheck | GitHub Actions workflows | — |
+| commitlint | сообщения коммитов в формате [Conventional Commits](https://www.conventionalcommits.org/ru/) | `.commitlintrc.json` |
+| Renovate | раз в неделю открывает PR с обновлениями зависимостей и инструментов | `renovate.json` |
+| [OSV-Scanner](https://google.github.io/osv-scanner/) | известные уязвимости в зависимостях (раз в неделю и при их изменении) | `.github/workflows/osv.yml` |
 
 ## Установка
 
-<!-- Опишите установку: клонирование, зависимости, переменные окружения -->
+Нужны только [mise](https://mise.jdx.dev/getting-started.html) и git. Java, Node.js и все линтеры mise поставит сам нужных версий.
 
 ```bash
 git clone https://github.com/iriss22/ai-for-developers-project-387.git
 cd ai-for-developers-project-387
+
+mise trust      # разрешить mise читать mise.toml этого проекта
+mise install    # Java, Node.js, hk и линтеры
+mise run setup  # npm-зависимости (корень и фронтенд) и git-хуки
 ```
+
+Переменные окружения пока не нужны. Настройки бэкенда лежат в `backend/src/main/resources/application.properties`.
 
 ## Использование
 
-<!-- Добавьте примеры запуска и запись asciinema — именно это смотрит работодатель -->
+Основные команды (полный список — `mise tasks`):
+
+```bash
+mise run dev     # бэкенд :8080 и фронтенд :5173 параллельно, Ctrl+C останавливает оба
+mise run check   # все проверки: линтеры, типы, тесты, сборка
+mise run fix     # безопасные автоисправления: форматирование, пробелы, Markdown
+mise run lint    # только линтеры
+mise run test    # только тесты
+mise run build   # production-сборка фронтенда и jar бэкенда
+mise run audit   # известные уязвимости в зависимостях (OSV-Scanner)
+```
+
+Фронтенд открывается на <http://localhost:5173>. Vite проксирует запросы `/api/*` на бэкенд `http://localhost:8080`, поэтому из кода фронтенда достаточно писать `fetch('/api/...')`, CORS настраивать не нужно.
+
+Проверка бэкенда:
+
+```bash
+curl http://localhost:8080/actuator/health
+# {"groups":["liveness","readiness"],"status":"UP"}
+```
+
+Собранный jar запускается так:
+
+```bash
+java -jar backend/target/calendar-0.0.1-SNAPSHOT.jar
+```
+
+### Где запускаются проверки
+
+- **pre-commit** — быстрые проверки изменённых файлов: секреты, опечатки, Markdown, workflows, Spotless, oxfmt и oxlint. Форматирование исправляется автоматически.
+- **commit-msg** — commitlint проверяет сообщение коммита: `тип: описание`, например `feat: добавить выбор слота` или `fix(backend): …`. Типы: `feat`, `fix`, `docs`, `refactor`, `test`, `build`, `ci`, `chore` и другие из Conventional Commits.
+- **pre-push** — проверки целиком тех частей проекта, которых касается push: типы и Knip на фронтенде, Checkstyle и Error Prone на бэкенде.
+- **CI** (`.github/workflows/ci.yml`) — на каждый push проверяет сообщения новых коммитов и выполняет `mise run check`, ту же команду, что и локально. Хук можно пропустить, CI — нет.
+- **По расписанию** (`.github/workflows/osv.yml`) — раз в неделю, а также при изменении `pom.xml` или lockfile'ов, `mise run audit` ищет известные уязвимости в зависимостях. В `check` эта проверка не входит: новые уязвимости появляются без изменений в коде и не должны блокировать несвязанную работу.
+
+## Деплой
+
+Приложение развёрнуто на Render: <https://calendar-byst.onrender.com>
+
+Один Docker-образ (`Dockerfile`) содержит и бэкенд, и собранный фронтенд: Spring Boot отдаёт API под `/api` и статику. Сервис описан в Blueprint `render.yaml`. Render пересобирает и выкатывает его на каждый push в ветку, указанную в настройках Blueprint.
+
+### Ограничения
+
+- **Данные не сохраняются.** Типы встреч и бронирования лежат в памяти процесса (`InMemory*Repository`), базы данных нет. Всё созданное пропадает при каждом деплое, перезапуске и засыпании сервиса.
+- **Сервис засыпает.** На бесплатном тарифе Render останавливает сервис примерно через 15 минут без запросов. Первый запрос после этого ждёт запуска до минуты, а данные, как сказано выше, к этому моменту уже сброшены.
+
+### Подключение MCP-сервера Render
+
+MCP-сервер Render позволяет ИИ-агенту (например, Claude Code) создавать сервисы, смотреть деплои, логи и метрики. Он уже описан в `.mcp.json`, а ключ берётся из переменной окружения `RENDER_API_KEY`. Сам ключ в репозиторий не попадает.
+
+1. В [дашборде Render](https://dashboard.render.com) откройте **Account Settings → API Keys** и создайте ключ.
+2. Задайте переменную в профиле своей оболочки (`~/.zshrc`, `~/.bashrc`), а не в файлах проекта:
+
+   ```bash
+   export RENDER_API_KEY=<ваш ключ>
+   ```
+
+3. Откройте новый терминал и перезапустите Claude Code из корня репозитория. При первом запуске подтвердите использование MCP-сервера из `.mcp.json`.
+4. Проверьте подключение командой `/mcp`: сервер `render` должен быть в статусе connected. После этого агент видит workspace Render, к которому относится ключ.
+
+Ключ даёт полный доступ к аккаунту Render. Не коммитьте его и не вставляйте в чат. Если ключ утёк, удалите его в **API Keys** и создайте новый.
 
 ---
 
@@ -37,3 +147,30 @@ cd ai-for-developers-project-387
 ## О Хекслете
 
 [Хекслет](https://ru.hexlet.io/) — школа программирования: авторские программы обучения с практикой, поддержкой наставников и реальными проектами, которые остаются в резюме. Этот репозиторий — один из таких проектов.
+
+## Сценарий: от типа встречи до записи в списке владельца
+
+Владелец создаёт тип встречи
+
+1. Нажимает «Админка» в шапке.
+2. Нажимает «Создать событие». Заполняет поля: название и описание, выбирает длительность. Нажимает «Сохранить».
+3. Новый тип появляется в списке типов в админке.
+
+Гость записывается
+
+4. На главной странице нажимает «Записаться» (или «Записаться» в шапке).
+5. На экране «Выберите тип события» нажимает на карточку с нужной встречей.
+6. В блоке «Календарь» выбирает дату. Доступны только дни из окна записи (14 дней с 9 до 18), переключать месяцы можно кнопками ← и →. В карточке слева в поле «Выбранная дата» появится дата.
+7. В блоке «Статус слотов» выбирает свободный слот. Слоты со статусом «Занято» выбрать нельзя. В поле «Выбранное время» появится выбранное время.
+8. Нажимает «Продолжить». Пока время не выбрано, кнопка неактивна.
+9. На шаге подтверждения вводит имя, email и, если нужно, заметку. Нажимает «Забронировать».
+10. Видит экран подтверждения: Название, дата и время встречи.
+
+Проверка занятости
+
+11. Гость снова нажимает «Записаться» и выбирает дату, выбранный слот теперь показан как «Занято».
+12. Затем выбирает «Встреча 30 минут» на ту же дату. Слоты, которые пересекаются, тоже помечены «Занято».
+
+Владелец видит запись
+
+13. Нажимает «Админка» и открывает список предстоящих встреч. Там есть строка: с забронированной встречей, имя и email гостя.

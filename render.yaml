@@ -1,0 +1,16 @@
+# Blueprint Render: https://render.com/docs/blueprint-spec
+# Один web-сервис из Dockerfile в корне. Render передаёт порт в переменной PORT,
+# Spring Boot слушает его (server.port в application.properties).
+services:
+  - type: web
+    name: calendar
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: PORT
+        value: '10000'

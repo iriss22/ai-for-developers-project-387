@@ -1,0 +1,66 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Обновление зависимостей: Maven, npm (корень и frontend), Maven Wrapper, инструменты из mise.toml, GitHub Actions и версия hk в hk.pkl",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "timezone": "Europe/Moscow",
+  "schedule": [
+    "* 0-6 * * 1"
+  ],
+  "minimumReleaseAge": "14 days",
+  "ignorePaths": [
+    ".github/workflows/hexlet-check.yml"
+  ],
+  "packageRules": [
+    {
+      "description": "Минорные и патч-обновления одним PR в неделю; мажорные приходят отдельными PR",
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest",
+        "pin",
+        "pinDigest"
+      ],
+      "groupName": "non-major dependencies"
+    },
+    {
+      "description": "hk обновляется в mise.toml и hk.pkl одновременно, иначе схема конфига разойдётся с бинарём",
+      "matchDepNames": [
+        "hk",
+        "jdx/hk"
+      ],
+      "groupName": "hk"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Версия схемы hk в URL пакета pkl (встречается в строке дважды)",
+      "managerFilePatterns": [
+        "/^hk\\.pkl$/"
+      ],
+      "matchStrings": [
+        "hk/releases/download/v(?<currentValue>\\d+\\.\\d+\\.\\d+)/hk@\\d+\\.\\d+\\.\\d+#"
+      ],
+      "depNameTemplate": "jdx/hk",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.+)$",
+      "autoReplaceStringTemplate": "hk/releases/download/v{{{newValue}}}/hk@{{{newValue}}}#"
+    },
+    {
+      "customType": "regex",
+      "description": "Версия google-java-format для Spotless задана свойством в pom.xml, а не зависимостью",
+      "managerFilePatterns": [
+        "/^backend/pom\\.xml$/"
+      ],
+      "matchStrings": [
+        "<google-java-format\\.version>(?<currentValue>[^<]+)</google-java-format\\.version>"
+      ],
+      "depNameTemplate": "com.google.googlejavaformat:google-java-format",
+      "datasourceTemplate": "maven"
+    }
+  ]
+}

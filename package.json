@@ -1,0 +1,9 @@
+{
+  "name": "ai-for-developers-project-387",
+  "private": true,
+  "description": "Инструменты репозитория (commitlint). Код приложения лежит в frontend/ и backend/",
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4"
+  }
+}

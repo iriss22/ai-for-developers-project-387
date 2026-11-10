@@ -1,0 +1,25 @@
+name: release-please
+
+# Ведёт release-PR с CHANGELOG.md по Conventional Commits из AGENTS.md: один релиз на
+# весь монорепозиторий (release-type simple), версии backend/pom.xml и
+# frontend/package.json не трогает — они размечены отдельно.
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1

@@ -1,0 +1,22 @@
+{
+  "name": "@hexlet-calendar/contract",
+  "private": true,
+  "description": "TypeSpec-контракт API (источник правды) и генерация OpenAPI из него. Код приложения не хранит.",
+  "scripts": {
+    "generate:openapi": "tsp compile . --emit @typespec/openapi3",
+    "generate:frontend-sdk": "openapi-ts -i ./openapi.yaml -o ../frontend/src/api/generated -c @hey-api/client-fetch",
+    "generate": "npm run generate:openapi && npm run generate:frontend-sdk"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "0.99.0",
+    "@typespec/compiler": "1.17.0",
+    "@typespec/http": "1.17.0",
+    "@typespec/openapi3": "1.17.0",
+    "@typespec/rest": "0.87.0",
+    "typescript": "6.0.3"
+  },
+  "overrides": {
+    "js-yaml": "^4.3.2",
+    "undici": "^7.30.1"
+  }
+}

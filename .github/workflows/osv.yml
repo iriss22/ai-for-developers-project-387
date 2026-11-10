@@ -1,0 +1,45 @@
+name: osv-scanner
+
+# Известные уязвимости в зависимостях. Уязвимости публикуют без изменений в нашем коде,
+# поэтому проверка идёт по расписанию, а не в `mise run check` на каждый push.
+on:
+  schedule:
+    # понедельник, 07:23 по Москве (04:23 UTC)
+    - cron: '23 4 * * 1'
+  # сразу проверить изменения зависимостей, в том числе PR от Renovate
+  push:
+    branches:
+      - '**'
+    paths:
+      - backend/pom.xml
+      - package-lock.json
+      - contract/package-lock.json
+      - frontend/package-lock.json
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Java для SBOM бэкенда и osv-scanner строго по версиям из mise.toml
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.m2/repository
+          key: m2-${{ runner.os }}-${{ hashFiles('backend/pom.xml') }}
+          restore-keys: m2-${{ runner.os }}-
+
+      - run: mise run audit
