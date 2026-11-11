@@ -50,8 +50,7 @@ jobs:
         env:
           MOONSHOT_API_KEY: ${{ secrets.MOONSHOT_API_KEY }}
         with:
-          # Самая дешёвая модель moonshotai ($0.95/$4 за 1M токенов).
-          # Прежний запуск с ней упал на 404 «Not found or Permission denied» —
-          # вероятно, из-за заблокированного баланса (insufficient balance),
-          # а не из-за id модели. Проверяем после пополнения счёта.
-          model: moonshotai/kimi-k2.7-code
+          # Доступные этому ключу модели (GET /v1/models): только kimi-k3.1-pro и kimi-k3.
+          # Более дешёвых в списке нет — kimi-k2.7-code и прочие на free-тарифе
+          # platform.kimi.ai недоступны (404 «Not found the model … or Permission denied»).
+          model: moonshotai/kimi-k3.1-pro
