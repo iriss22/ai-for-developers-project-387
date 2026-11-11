@@ -1,0 +1,53 @@
+# OpenCode: отвечает на комментарии с упоминанием /oc или /opencode.
+# Документация: https://opencode.ai/docs/github/
+# Доступ к репозиторию и комментариям даёт installation token GitHub App opencode-agent
+# через обмен OIDC-токена; GITHUB_TOKEN здесь только на чтение через checkout.
+name: opencode
+
+on:
+  # jactionlint ignore=dangerous-triggers: триггер требуется OpenCode для комментариев;
+  # риск чужого комментария закрыт проверкой author_association ниже.
+  # Пересмотр исключения: 2027-02-11 (см. правило об исключениях линтера в AGENTS.md).
+  issue_comment: # jactionlint ignore=dangerous-triggers
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+# Не запускать два агента параллельно по одной задаче: новые запуски ждут
+# завершения текущего для того же issue/PR.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  opencode:
+    # Только участники репозитория могут запускать агента: issue_comment
+    # выполняется в контексте default-ветки с id-token и секретами.
+    if: |
+      (github.event.comment.author_association == 'OWNER' ||
+       github.event.comment.author_association == 'MEMBER' ||
+       github.event.comment.author_association == 'COLLABORATOR') &&
+      (contains(github.event.comment.body, '/oc') ||
+       contains(github.event.comment.body, '/opencode'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      # id-token нужен OpenCode для обмена OIDC-токена на installation token GitHub App
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Run OpenCode
+        uses: anomalyco/opencode/github@810c0eba1a7348036f8bdf61e6632d0c36c6876c # v1.19.5
+        env:
+          MOONSHOT_API_KEY: ${{ secrets.MOONSHOT_API_KEY }}
+        with:
+          model: moonshot/kimi-k2.7-code
