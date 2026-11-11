@@ -50,4 +50,4 @@ jobs:
         env:
           MOONSHOT_API_KEY: ${{ secrets.MOONSHOT_API_KEY }}
         with:
-          model: moonshot/kimi-k2.7-code
+          model: moonshotai/kimi-k2.7-code
