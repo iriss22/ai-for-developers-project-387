@@ -108,6 +108,20 @@ java -jar backend/target/calendar-0.0.1-SNAPSHOT.jar
 - **CI** (`.github/workflows/ci.yml`) — на каждый push проверяет сообщения новых коммитов и выполняет `mise run check`, ту же команду, что и локально. Хук можно пропустить, CI — нет.
 - **По расписанию** (`.github/workflows/osv.yml`) — раз в неделю, а также при изменении `pom.xml` или lockfile'ов, `mise run audit` ищет известные уязвимости в зависимостях. В `check` эта проверка не входит: новые уязвимости появляются без изменений в коде и не должны блокировать несвязанную работу.
 
+### Агент OpenCode в Issues и PR
+
+Workflow [`.github/workflows/opencode.yml`](.github/workflows/opencode.yml) запускает OpenCode по комментариям с командой `/oc` или `/opencode` — в issues и в review-комментариях PR. Назначение — отвечать на вопросы и выполнять небольшие поручения участников прямо из трекера.
+
+- **События**: только создание комментария (`issue_comment` и `pull_request_review_comment`, оба `types: [created]`). Редактирование и удаление комментариев не запускают агента.
+- **Кто может запустить**: только комментарий участника с `author_association` OWNER, MEMBER или COLLABORATOR. Команды ботов и посторонних (например, из fork) игнорируются и до секретов не доходят.
+- **Модель**: `moonshotai/kimi-k3.1-pro` через `MOONSHOT_API_KEY` из GitHub Secrets. Это единственная из доступных ключу моделей дешевле альтернативы (`kimi-k3`); более дешёвые модели на free-тарифе platform.kimi.ai закрыты (см. [#4](https://github.com/iriss22/ai-for-developers-project-387/issues/4)).
+- **Авторизация**: доступ к репозиторию даёт installation token GitHub App `opencode-agent` через обмен OIDC-токена (`id-token: write`); у `GITHUB_TOKEN` только `contents: read`, у checkout `persist-credentials: false`.
+- **Ограничения**: тайм-аут 30 минут, одна задача за раз (`concurrency` на issue/PR, без отмены текущего прогона).
+- **Share**: публичный доступ к сессиям OpenCode не включается (параметр `share` не задан, по умолчанию выключен) — ответы видны только в комментариях GitHub.
+- **Результаты**: агент отвечает комментарием в той же ветке, вместе со ссылкой на прогон в Actions.
+
+Отличие от локального агента (Claude Code/OpenCode в терминале): workflow-агент работает только по команде в комментарии, на раннере GitHub, с правами GitHub App и скиллами из `.agents/skills/`; локальный агент работает в рабочей копии разработчика.
+
 ## Деплой
 
 Приложение развёрнуто на Render: <https://calendar-byst.onrender.com>
