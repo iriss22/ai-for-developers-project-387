@@ -119,6 +119,7 @@ Workflow [`.github/workflows/opencode.yml`](.github/workflows/opencode.yml) за
 - **Ограничения**: тайм-аут 30 минут, одна задача за раз (`concurrency` на issue/PR, без отмены текущего прогона).
 - **Share**: публичный доступ к сессиям OpenCode не включается (параметр `share` не задан, по умолчанию выключен) — ответы видны только в комментариях GitHub.
 - **Результаты**: агент отвечает комментарием в той же ветке, вместе со ссылкой на прогон в Actions.
+- **Контекст на раннере**: агент получает репозиторий со скиллами первого проекта из `.agents/skills/` (triage, implement, code-review, research и другие) и настройками GitHub Issues из `docs/agents/` — трекер (`gh` CLI, `iriss22/ai-for-developers-project-387`), словарь из пяти triage-меток (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), доменные документы (`GLOSSARY.md`, `docs/adr/`). Полный список скиллов — в каталоге `.agents/skills/`.
 
 Отличие от локального агента (Claude Code/OpenCode в терминале): workflow-агент работает только по команде в комментарии, на раннере GitHub, с правами GitHub App и скиллами из `.agents/skills/`; локальный агент работает в рабочей копии разработчика.
 
