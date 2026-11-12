@@ -1,0 +1,79 @@
+# OpenCode: автотриаж новых обращений.
+# На каждый открытый или переоткрытый issue запускает OpenCode, который
+# по скиллу triage разбирает обращение: ставит triage-метку и пишет
+# краткий комментарий с обоснованием и следующим шагом.
+# Обращения, которые уже в триаже (есть triage-метка) или созданы ботами,
+# пропускаются на уровне job-if — до секретов и раннера не доходят.
+name: opencode-triage
+
+on:
+  issues:
+    types: [opened, reopened]
+
+# Триаж одного issue не должен накладываться сам на себя (например, при
+# быстром reopen): новый прогон отменяет незавершённый для того же issue.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  triage:
+    # Пропускаем ботов (release-please, Renovate и т.п.) и обращения, по
+    # которым триаж уже сделан: в них есть одна из triage-меток из
+    # docs/agents/triage-labels.md.
+    if: |
+      github.event.issue.user.type == 'User' &&
+      !contains(github.event.issue.labels.*.name, 'needs-triage') &&
+      !contains(github.event.issue.labels.*.name, 'needs-info') &&
+      !contains(github.event.issue.labels.*.name, 'ready-for-agent') &&
+      !contains(github.event.issue.labels.*.name, 'ready-for-human') &&
+      !contains(github.event.issue.labels.*.name, 'wontfix')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      # id-token нужен OpenCode для обмена OIDC-токена на installation token GitHub App
+      id-token: write
+      contents: read
+      # Триажеру нужно ставить метки и писать комментарий в issue
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Run OpenCode triage
+        uses: anomalyco/opencode/github@810c0eba1a7348036f8bdf61e6632d0c36c6876c # v1.19.5
+        env:
+          MOONSHOT_API_KEY: ${{ secrets.MOONSHOT_API_KEY }}
+        with:
+          # Доступные этому ключу модели: только kimi-k3.1-pro и kimi-k3
+          # (см. комментарий в opencode.yml).
+          model: moonshotai/kimi-k3.1-pro
+          prompt: |
+            Ты — автотриажер новых обращений в трекере ${{ github.repository }}.
+            Выполни триаж issue #${{ github.event.issue.number }} по скиллу
+            triage из .agents/skills/ и правилам из docs/agents/
+            (issue-tracker.md, triage-labels.md). Заголовок и текст issue
+            прочитай сам через gh — в промпт их не передавай.
+
+            Жёсткие ограничения:
+            - Код, спецификацию и текст issue не менять. Только чтение репозитория
+              для контекста и работа с issue: метки и один комментарий.
+            - Не закрывай issue и не меняй заголовок/тело.
+
+            Что сделать:
+            1. Если у issue уже есть triage-метка (needs-triage, needs-info,
+               ready-for-agent, ready-for-human, wontfix) — ничего не делай
+               и ответь «Пропуск: обращение уже в триаже».
+            2. Иначе выбери ровно одну triage-метку из docs/agents/triage-labels.md
+               и проставь её (если метки нет в репозитории — создай через gh).
+               При необходимости добавь типовую метку (bug, enhancement,
+               question, documentation, duplicate).
+            3. Напиши один краткий комментарий: категория, обоснование,
+               следующий шаг. Если не хватает информации — метка needs-info
+               и список вопросов.
