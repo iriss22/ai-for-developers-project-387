@@ -121,7 +121,14 @@ Workflow [`.github/workflows/opencode.yml`](.github/workflows/opencode.yml) за
 - **Результаты**: агент отвечает комментарием в той же ветке, вместе со ссылкой на прогон в Actions.
 - **Контекст на раннере**: агент получает репозиторий со скиллами первого проекта из `.agents/skills/` (triage, implement, code-review, research и другие) и настройками GitHub Issues из `docs/agents/` — трекер (`gh` CLI, `iriss22/ai-for-developers-project-387`), словарь из пяти triage-меток (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), доменные документы (`GLOSSARY.md`, `docs/adr/`). Полный список скиллов — в каталоге `.agents/skills/`.
 
-Отличие от локального агента (Claude Code/OpenCode в терминале): workflow-агент работает только по команде в комментарии, на раннере GitHub, с правами GitHub App и скиллами из `.agents/skills/`; локальный агент работает в рабочей копии разработчика.
+Workflow [`.github/workflows/opencode-triage.yml`](.github/workflows/opencode-triage.yml) автоматически триажит новые обращения: OpenCode по скиллу `triage` ставит одну triage-метку и оставляет краткий комментарий с категорией, обоснованием и следующим шагом.
+
+- **События**: только открытие и повторное открытие issue (`issues`, `types: [opened, reopened]`).
+- **Фильтры**: созданные ботами и уже затриаженные обращения — с любой из меток `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix` — пропускаются условием job, до запуска OpenCode и доступа к секретам.
+- **Права**: `issues: write` для установки меток и комментирования, `id-token: write` для обмена OIDC-токена на installation token GitHub App, `contents: read` для чтения репозитория.
+- **Ограничения**: тайм-аут 15 минут, отдельная `concurrency`-группа на issue; новый прогон отменяет незавершённый предыдущий для того же обращения (`cancel-in-progress: true`).
+
+Отличие агента из `opencode.yml` от локального агента (Claude Code/OpenCode в терминале): workflow-агент работает только по команде в комментарии, на раннере GitHub, с правами GitHub App и скиллами из `.agents/skills/`; локальный агент работает в рабочей копии разработчика.
 
 ## Деплой
 
