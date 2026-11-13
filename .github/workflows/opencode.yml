@@ -33,7 +33,10 @@ jobs:
       (contains(github.event.comment.body, '/oc') ||
        contains(github.event.comment.body, '/opencode'))
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Тайм-аут 60 минут: координатор может гонять несколько implementer-субагентов
+    # (TDD по тикетам + полный mise check + PR) — за 30 минут реальные задачи
+    # #6 не уложились и прогон обрывался без результата.
+    timeout-minutes: 60
     permissions:
       # id-token нужен OpenCode для обмена OIDC-токена на installation token GitHub App
       id-token: write
