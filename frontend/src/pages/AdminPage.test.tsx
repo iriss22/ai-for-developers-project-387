@@ -172,7 +172,7 @@ describe('Админка: вкладка «Предстоящие встречи
     await openUpcomingTab()
 
     expect(await screen.findByText('Предстоящих встреч нет')).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Сегодня' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Сегодня' })).not.toBeInTheDocument()
     expect(screen.queryByText(/ближайшая встреча/)).not.toBeInTheDocument()
   })
 
