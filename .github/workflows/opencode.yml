@@ -52,6 +52,10 @@ jobs:
         uses: anomalyco/opencode/github@810c0eba1a7348036f8bdf61e6632d0c36c6876c # v1.19.5
         env:
           MOONSHOT_API_KEY: ${{ secrets.MOONSHOT_API_KEY }}
+          # Pre-push хук репозитория запускает hk через mise, которого нет
+          # в окружении агента: голый `git push` падал бы с «mise: not found».
+          # Агент обязан пропускать хук; те же проверки прогоняет CI (mise run check).
+          HK: "0"
         with:
           # Доступные этому ключу модели (GET /v1/models): только kimi-k3.1-pro и kimi-k3.
           # Более дешёвых в списке нет — kimi-k2.7-code и прочие на free-тарифе
