@@ -1,4 +1,4 @@
-import { Card, Stack, Text, Title } from '@mantine/core'
+import { Card, Stack, Text } from '@mantine/core'
 import { fetchBookings } from '../../api/bookings.ts'
 import type { Booking } from '../../api/bookings.ts'
 import { LoadError, Loading } from '../../components/LoadStatus.tsx'
@@ -71,7 +71,6 @@ function UpcomingBookingsTab() {
   return (
     <Stack gap="md">
       <Stack component="section" aria-label="Сегодня" gap="sm">
-        <Title order={3}>Сегодня</Title>
         {todayBookings.length === 0 ? (
           <Text c="dimmed">
             {daysToNearest === null

@@ -176,7 +176,7 @@ describe('Админка: вкладка «Предстоящие встречи
     expect(screen.queryByText(/ближайшая встреча/)).not.toBeInTheDocument()
   })
 
-  it('показывает записи только на сегодня в отдельном блоке без общей заглушки', async () => {
+  it('показывает записи только на сегодня в отдельном блоке без заголовка и общей заглушки', async () => {
     server.use(
       http.get('/api/bookings', () =>
         HttpResponse.json([
@@ -190,6 +190,7 @@ describe('Админка: вкладка «Предстоящие встречи
     const today = await screen.findByRole('region', { name: 'Сегодня' })
     expect(within(today).getByText('Интервью')).toBeInTheDocument()
     expect(within(today).getByText('Разбор резюме')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Сегодня' })).not.toBeInTheDocument()
     expect(screen.queryByText('Предстоящих встреч нет')).not.toBeInTheDocument()
     expect(screen.queryByText(/На сегодня встреч нет/)).not.toBeInTheDocument()
     expect(
