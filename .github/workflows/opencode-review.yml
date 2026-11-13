@@ -2,8 +2,9 @@
 # На каждый новый или обновлённый PR запускает OpenCode, который по критериям
 # из REVIEW.md оценивает дифф и оставляет один обобщающий комментарий с вердиктом
 # approve / changes requested. Код и настройки репозитория агент не меняет.
-# PR от ботов (release-please, Renovate и т.п.) пропускаются на уровне job-if —
-# до секретов и раннера не доходят.
+# PR служебных ботов (release-please, Renovate) пропускаются на уровне job-if —
+# до секретов и раннера не доходят. PR самого opencode-agent ревьюим:
+# его работу должен проверять независимый ревьюер.
 name: opencode-review
 
 on:
@@ -21,9 +22,12 @@ permissions:
 
 jobs:
   review:
-    # Ревьюим только PR людей: боты (release-please, Renovate) открывают PR
-    # по предсказуемому шаблону, авторевью им не нужно.
-    if: github.event.pull_request.user.type == 'User'
+    # Ревьюим PR людей и агента OpenCode (его работу должен проверять
+    # независимый ревьюер). Пропускаем только служебных ботов: у release-please
+    # и Renovate PR предсказуемый, авторевью им не нужно.
+    if: |
+      !contains(fromJSON('["release-please[bot]", "renovate[bot]"]'),
+                github.event.pull_request.user.login)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -43,8 +47,10 @@ jobs:
           persist-credentials: false
 
       # Предел запусков: если ветку гоняют многократно, модель не вызываем.
-      # Считаем предыдущие прогоны этого workflow по этому PR (без текущего);
-      # от старого диффа новое ревью бесполезно, а free-ключ платит за каждый вызов.
+      # Считаем предыдущие прогоны этого workflow по этому PR, в которых модель
+      # реально вызывалась (conclusion success/failure/cancelled). Служебные
+      # прогоны — skipped (фильтр по автору) и action_required (ожидание
+      # аппрува) — не тратят лимит: модель в них не вызывалась.
       - name: Check review run limit
         id: limit
         env:
@@ -52,7 +58,7 @@ jobs:
         run: |
           pr=${{ github.event.pull_request.number }}
           runs=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/opencode-review.yml/runs?per_page=100" \
-            --jq "[.workflow_runs[] | select(.id != ${{ github.run_id }} and .event == \"pull_request\" and any(.pull_requests[]; .number == $pr))] | length")
+            --jq "[.workflow_runs[] | select(.id != ${{ github.run_id }} and .event == \"pull_request\" and any(.pull_requests[]; .number == $pr) and (.conclusion == \"success\" or .conclusion == \"failure\" or .conclusion == \"cancelled\"))] | length")
           echo "previous-runs=$runs" >> "$GITHUB_OUTPUT"
           if [ "$runs" -ge 3 ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
