@@ -11,13 +11,26 @@ const ownerIsoDateFormatter = new Intl.DateTimeFormat('en-CA', {
   day: '2-digit',
 })
 
+export function dateInOwnerZone(date: Date): string {
+  return ownerIsoDateFormatter.format(date)
+}
+
 export function todayInOwnerZone(): string {
-  return ownerIsoDateFormatter.format(new Date())
+  return dateInOwnerZone(new Date())
 }
 
 export function addDays(date: string, days: number): string {
   const [year, month, day] = date.split('-').map(Number)
   return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10)
+}
+
+export function calendarDaysBetween(from: string, to: string): number {
+  const [fromYear, fromMonth, fromDay] = from.split('-').map(Number)
+  const [toYear, toMonth, toDay] = to.split('-').map(Number)
+  // Полуночи UTC исключают время встреч и DST: разность отражает только календарные даты.
+  const fromUtc = Date.UTC(fromYear, fromMonth - 1, fromDay)
+  const toUtc = Date.UTC(toYear, toMonth - 1, toDay)
+  return (toUtc - fromUtc) / 86_400_000
 }
 
 // 'YYYY-MM-DD' → 'dd.mm.yyyy'
