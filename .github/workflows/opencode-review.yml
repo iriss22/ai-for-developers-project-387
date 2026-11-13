@@ -1,0 +1,126 @@
+# OpenCode: независимое авторевью pull request.
+# На каждый новый или обновлённый PR запускает OpenCode, который по критериям
+# из REVIEW.md оценивает дифф и оставляет один обобщающий комментарий с вердиктом
+# approve / changes requested. Код и настройки репозитория агент не меняет.
+# PR от ботов (release-please, Renovate и т.п.) пропускаются на уровне job-if —
+# до секретов и раннера не доходят.
+name: opencode-review
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+# Пуш в ветку PR делает незавершённое ревью устаревшим: новый прогон отменяет
+# предыдущий для того же PR, и ветка ревьюируется только по последнему диффу.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    # Ревьюим только PR людей: боты (release-please, Renovate) открывают PR
+    # по предсказуемому шаблону, авторевью им не нужно.
+    if: github.event.pull_request.user.type == 'User'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      # id-token нужен OpenCode для обмена OIDC-токена на installation token GitHub App
+      id-token: write
+      contents: read
+      # Ревьюеру нужно читать PR и писать в нём один итоговый комментарий
+      pull-requests: write
+      # Статусный чек opencode-review на head-коммите: ветка защищена требованием
+      # этого чека, мердж без завершённого ревью невозможен
+      statuses: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      # Предел запусков: если ветку гоняют многократно, модель не вызываем.
+      # Считаем предыдущие прогоны этого workflow по этому PR (без текущего);
+      # от старого диффа новое ревью бесполезно, а free-ключ платит за каждый вызов.
+      - name: Check review run limit
+        id: limit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pr=${{ github.event.pull_request.number }}
+          runs=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/opencode-review.yml/runs?per_page=100" \
+            --jq "[.workflow_runs[] | select(.id != ${{ github.run_id }} and .event == \"pull_request\" and any(.pull_requests[]; .number == $pr))] | length")
+          echo "previous-runs=$runs" >> "$GITHUB_OUTPUT"
+          if [ "$runs" -ge 3 ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Лимит запусков авторевью на PR исчерпан ($runs >= 3), модель не вызывается"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run OpenCode review
+        if: steps.limit.outputs.skip != 'true'
+        uses: anomalyco/opencode/github@810c0eba1a7348036f8bdf61e6632d0c36c6876c # v1.19.5
+        env:
+          MOONSHOT_API_KEY: ${{ secrets.MOONSHOT_API_KEY }}
+        with:
+          # Доступные этому ключу модели: только kimi-k3.1-pro и kimi-k3
+          # (см. комментарий в opencode.yml).
+          model: moonshotai/kimi-k3.1-pro
+          prompt: |
+            Ты — независимый ревьюер pull request #${{ github.event.pull_request.number }}
+            в ${{ github.repository }}. Оцени дифф PR по критериям из REVIEW.md
+            (они лежат в корне репозитория — прочитай файл сам).
+            Ветку и историю коммитов PR получи через gh; дифф возьми из GitHub.
+
+            Жёсткие ограничения:
+            - Код, настройки, workflow и тексты репозитория не менять. Только чтение.
+            - Не меняй метки, ревью-статусы и не делай merge: результат — один
+              обобщающий комментарий в PR через gh.
+            - Не дублируй замечания CI: `mise run check` и другие workflow
+              сами сообщат о падениях линтеров и тестов. Ревьюер оценивает то,
+              что автопроверки не видят.
+
+            Что сделать:
+            1. Прочитай REVIEW.md и примени все четыре раздела критериев.
+            2. Для каждого критерия дай вердикт «ок» или «замечание» с ссылкой
+               на файл и строку в диффе PR.
+            3. Проверь, что шаблон PR заполнен: разделы «Проверки», «Риск»
+               и «Откат». Пустые разделы — замечание по критерию 4.
+            4. Определи итог по REVIEW.md: approve или changes requested.
+            5. Напиши один итоговый комментарий в PR: вердикт, замечания
+               (файл:строка — что не так — как поправить), сильные стороны.
+            6. Выставь статусный чек на head-коммит PR через gh:
+               - verdict approve → `gh api repos/<owner>/<repo>/statuses/<head_sha>`
+                 с state=success и context=opencode-review;
+               - verdict changes requested → то же, но state=failure.
+               Без этого чека ветка PR не смержится.
+
+      # Страховка: если агент не выставил статус (не успел, упал, забыл),
+      # ставим error, чтобы отсутствие ревью тоже блокировало мердж.
+      # Если модель не вызывалась из-за лимита запусков — ставим success
+      # с пояснением: лимит не должен блокировать мердж бесконечно.
+      - name: Ensure review status exists on head commit
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SKIP: ${{ steps.limit.outputs.skip }}
+        run: |
+          sha="${{ github.event.pull_request.head.sha }}"
+          state="$(gh api "repos/$GITHUB_REPOSITORY/statuses/$sha?per_page=100" \
+            --jq '[.[] | select(.context == "opencode-review")] | first | .state')"
+          if [ "$state" != "success" ] && [ "$state" != "failure" ]; then
+            if [ "$SKIP" = "true" ]; then
+              review_state=success
+              description="Лимит запусков авторевью на PR исчерпан"
+            else
+              review_state=error
+              description="Авторевью не завершилось"
+            fi
+            gh api "repos/$GITHUB_REPOSITORY/statuses/$sha" \
+              -f state="$review_state" -f context=opencode-review \
+              -f description="$description" >/dev/null
+          fi

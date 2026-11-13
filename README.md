@@ -128,6 +128,18 @@ Workflow [`.github/workflows/opencode-triage.yml`](.github/workflows/opencode-tr
 - **Права**: `issues: write` для установки меток и комментирования, `id-token: write` для обмена OIDC-токена на installation token GitHub App, `contents: read` для чтения репозитория.
 - **Ограничения**: тайм-аут 15 минут, отдельная `concurrency`-группа на issue; новый прогон отменяет незавершённый предыдущий для того же обращения (`cancel-in-progress: true`).
 
+Workflow [`.github/workflows/opencode-review.yml`](.github/workflows/opencode-review.yml) запускает независимое авторевью каждого pull request: OpenCode оценивает дифф по критериям из [REVIEW.md](REVIEW.md) и оставляет один обобщающий комментарий с вердиктом `approve` или `changes requested`.
+
+- **События**: открытие, повторное открытие, обновление ветки и снятие черновика (`pull_request`, `types: [opened, reopened, synchronize, ready_for_review]`).
+- **Критерии**: четыре раздела [REVIEW.md](REVIEW.md) — соответствие задаче, качество кода, тесты, безопасность и риски. Ревьюер не дублирует замечания CI и оценивает то, что автопроверки не видят.
+- **Фильтры**: PR от ботов (release-please, Renovate) пропускаются условием job, до запуска OpenCode и доступа к секретам.
+- **Права**: `pull-requests: write` для чтения PR и итогового комментария, `id-token: write` для обмена OIDC-токена на installation token GitHub App, `contents: read` для чтения репозитория. Код и настройки агент не меняет.
+- **Ограничения**: тайм-аут 30 минут; `concurrency`-группа на PR с `cancel-in-progress: true` — новый пуш в ветку отменяет устаревшее незавершённое ревью, ветка ревьюируется только по последнему диффу.
+- **Блокировка мерджа**: ревьюер выставляет на head-коммит статусный чек `opencode-review` (`success` при approve, `failure` при changes requested). Чек нужно добавить в требуемые проверки защиты ветки (`Settings → Branches → require status checks`): тогда мердж без завершённого ревью невозможен. Шаг `Ensure review status exists` ставит чеку `error`, если агент не выставил статус (упал, не успел за тайм-аут), — отсутствие ревью тоже блокирует.
+- **Предел запусков**: модель вызывается максимум 3 раза на PR — шаг `Check review run limit` считает предыдущие прогоны workflow по этому PR через GitHub API до запуска OpenCode. При исчерпании лимита модель не вызывается, а чек получает `success` с пояснением «Лимит запусков авторевью на PR исчерпан», чтобы защита ветки не блокировала мердж бесконечно из-за частых пушей.
+
+Шаблон PR — [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md): при открытии PR предлагает заполнить «Проверки», «Риск» и «Откат»; незаполненные разделы авторевью отмечает замечанием по критерию 4.
+
 Отличие агента из `opencode.yml` от локального агента (Claude Code/OpenCode в терминале): workflow-агент работает только по команде в комментарии, на раннере GitHub, с правами GitHub App и скиллами из `.agents/skills/`; локальный агент работает в рабочей копии разработчика.
 
 ## Деплой
