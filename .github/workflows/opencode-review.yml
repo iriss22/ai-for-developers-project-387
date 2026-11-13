@@ -47,8 +47,10 @@ jobs:
           persist-credentials: false
 
       # Предел запусков: если ветку гоняют многократно, модель не вызываем.
-      # Считаем предыдущие прогоны этого workflow по этому PR (без текущего);
-      # от старого диффа новое ревью бесполезно, а free-ключ платит за каждый вызов.
+      # Считаем предыдущие прогоны этого workflow по этому PR, в которых модель
+      # реально вызывалась (conclusion success/failure/cancelled). Служебные
+      # прогоны — skipped (фильтр по автору) и action_required (ожидание
+      # аппрува) — не тратят лимит: модель в них не вызывалась.
       - name: Check review run limit
         id: limit
         env:
@@ -56,7 +58,7 @@ jobs:
         run: |
           pr=${{ github.event.pull_request.number }}
           runs=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/opencode-review.yml/runs?per_page=100" \
-            --jq "[.workflow_runs[] | select(.id != ${{ github.run_id }} and .event == \"pull_request\" and any(.pull_requests[]; .number == $pr))] | length")
+            --jq "[.workflow_runs[] | select(.id != ${{ github.run_id }} and .event == \"pull_request\" and any(.pull_requests[]; .number == $pr) and (.conclusion == \"success\" or .conclusion == \"failure\" or .conclusion == \"cancelled\"))] | length")
           echo "previous-runs=$runs" >> "$GITHUB_OUTPUT"
           if [ "$runs" -ge 3 ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
