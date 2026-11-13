@@ -132,7 +132,7 @@ Workflow [`.github/workflows/opencode-review.yml`](.github/workflows/opencode-re
 
 - **События**: открытие, повторное открытие, обновление ветки и снятие черновика (`pull_request`, `types: [opened, reopened, synchronize, ready_for_review]`).
 - **Критерии**: четыре раздела [REVIEW.md](REVIEW.md) — соответствие задаче, качество кода, тесты, безопасность и риски. Ревьюер не дублирует замечания CI и оценивает то, что автопроверки не видят.
-- **Фильтры**: PR от ботов (release-please, Renovate) пропускаются условием job, до запуска OpenCode и доступа к секретам.
+- **Фильтры**: PR служебных ботов (`release-please[bot]`, `renovate[bot]`) пропускаются условием job по логину автора, до запуска OpenCode и доступа к секретам. PR самого `opencode-agent` ревьюим — его работу должен проверять независимый ревьюер.
 - **Права**: `pull-requests: write` для чтения PR и итогового комментария, `id-token: write` для обмена OIDC-токена на installation token GitHub App, `contents: read` для чтения репозитория. Код и настройки агент не меняет.
 - **Ограничения**: тайм-аут 30 минут; `concurrency`-группа на PR с `cancel-in-progress: true` — новый пуш в ветку отменяет устаревшее незавершённое ревью, ветка ревьюируется только по последнему диффу.
 - **Блокировка мерджа**: ревьюер выставляет на head-коммит статусный чек `opencode-review` (`success` при approve, `failure` при changes requested). Чек нужно добавить в требуемые проверки защиты ветки (`Settings → Branches → require status checks`): тогда мердж без завершённого ревью невозможен. Шаг `Ensure review status exists` ставит чеку `error`, если агент не выставил статус (упал, не успел за тайм-аут), — отсутствие ревью тоже блокирует.
