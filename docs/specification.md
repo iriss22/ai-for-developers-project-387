@@ -171,3 +171,5 @@ JSON, camelCase, префикс `/api`; id — числовые; длитель�
 
 - [Карта wayfinder и её тикеты](https://github.com/iriss22/ai-for-developers-project-386/issues/1): слоты и окно записи (#2), занятость (#3), доменная модель (#4), seed-данные и пустое состояние (#5), форма API (#6), админка (#7), фронтенд (#8).
 - `docs/adr/0001-in-memory-storage.md`, `docs/adr/0002-mvp-scope-single-owner-no-auth.md`.
+
+<!-- учебный PR: демонстрация исчерпания бюджета авторевью -->
