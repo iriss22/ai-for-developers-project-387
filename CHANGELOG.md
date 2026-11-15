@@ -2,7 +2,6 @@
 
 ## [0.2.0](https://github.com/iriss22/ai-for-developers-project-387/compare/v0.1.0...v0.2.0) (2026-11-15)
 
-
 ### Features
 
 * **ci:** агентский разбор отчёта OSV с issue по находкам ([#6](https://github.com/iriss22/ai-for-developers-project-387/issues/6)) ([1dcc796](https://github.com/iriss22/ai-for-developers-project-387/commit/1dcc7960aec94f423a02d3ab424a019ecae9a67e))
@@ -11,7 +10,6 @@
 * добавить автотриаж новых обращений ([#7](https://github.com/iriss22/ai-for-developers-project-387/issues/7)) ([5cd1c1b](https://github.com/iriss22/ai-for-developers-project-387/commit/5cd1c1b273c480dd859d32f3e8936d99cc5dd901))
 * добавить независимое авторевью PR с лимитом запусков ([#13](https://github.com/iriss22/ai-for-developers-project-387/issues/13)) ([b552124](https://github.com/iriss22/ai-for-developers-project-387/commit/b552124c0b81ebee8a136e0a4be66e9cbc9e7bb6))
 * перенести приложение и инструменты из проекта 386 ([#1](https://github.com/iriss22/ai-for-developers-project-387/issues/1)) ([133fd44](https://github.com/iriss22/ai-for-developers-project-387/commit/133fd44230fe251e1c4a855c5fdbe5d0c65721d0))
-
 
 ### Bug Fixes
 
