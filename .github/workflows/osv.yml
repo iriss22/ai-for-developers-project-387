@@ -51,12 +51,17 @@ jobs:
       - name: Scan dependencies
         run: |
           (cd backend && ./mvnw -q -B cyclonedx:makeBom)
-          osv-scanner --format json scan source \
+          # Флаги формата — после `scan source`: глобальные позиции сканер
+          # не принимает. Ненулевой код при находках гасим `|| true`:
+          # разбор отчёта делает job report.
+          osv-scanner scan source --format json \
             backend/target/calendar.cdx.json \
             package-lock.json \
             contract/package-lock.json \
             frontend/package-lock.json \
             > osv-report.json || true
+          # Пустой отчёт — это сбой сканера, а не «находок нет».
+          test -s osv-report.json || { echo "osv-scanner не оставил отчёт"; exit 1; }
 
       - name: Count findings
         id: count
@@ -75,18 +80,25 @@ jobs:
   report:
     # Разбор отчёта агентом: вывод сохраняем всегда, issue создаём только
     # по реальным находкам и без дублей. Запускаем даже если audit упал.
+    # Агент — opencode CLI (`opencode run --auto`): GitHub Action
+    # anomalyco/opencode принимает только события issue/PR, а здесь
+    # триггеры schedule, push и workflow_dispatch.
     needs: audit
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      # id-token: OpenCode меняет OIDC-токен на installation token GitHub App —
-      # это и есть выбранный способ авторизации агента.
-      id-token: write
+      # Выбранный способ авторизации — GITHUB_TOKEN этого прогона:
+      # contents на чтение отчёта, issues на создание находок. OIDC не нужен:
+      # агент ходит в GitHub через gh с GH_TOKEN.
       contents: read
       issues: write
+    env:
+      FINDINGS: ${{ needs.audit.outputs.findings }}
+      REPORT_PATH: report/osv-report.json
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410b181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           persist-credentials: false
@@ -95,48 +107,22 @@ jobs:
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: osv-report
+          path: report
 
-      - name: Run OpenCode audit analysis
-        uses: anomalyco/opencode/github@810c0eba1a7348036f8bdf61e6632d0c36c6876c # v1.19.5
+      # opencode ставит mise по версии из mise.toml (как osv-scanner
+      # в job audit): версия фиксируется репозиторием.
+      - uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+
+      - name: Run audit agent
+        shell: bash
         env:
           MOONSHOT_API_KEY: ${{ secrets.MOONSHOT_API_KEY }}
-          FINDINGS: ${{ needs.audit.outputs.findings }}
-        with:
-          model: moonshotai/kimi-k3.1-pro
-          prompt: |
-            Ты — агент аудита зависимостей в ${{ github.repository }}, запуск
-            ${{ github.event_name }} (${{ github.ref }}). Твоя задача — разобрать
-            отчёт OSV-Scanner и оформить результат. Жёсткие ограничения:
-            - Код, настройки и workflow репозитория не менять. Только чтение.
-            - Выполняй ровно те операции, которые описаны ниже; ничего лишнего
-              (никаких merge, label, закрытий issue).
-
-            Что сделать:
-            1. Прочитай osv-report.json (рядом с рабочей директорией агента —
-               артефакт скачан в корень репозитория).
-            2. Проверь переменную окружения FINDINGS (количество находок,
-               посчитанное шагом Count findings до вызова модели).
-            3. Если FINDINGS равен 0: выведи однозначный вывод
-               «Уязвимостей не найдено» и краткий перечень проверенных
-               lockfile'ов и SBOM. Issue не создавай.
-            4. Если FINDINGS больше 0:
-               a. Сгруппируй находки по пакетам: название, версия, severity,
-                  ссылки на OSV/GHSA, затронутые файлы.
-               b. Проверь через `gh issue list --label osv-audit --state all`,
-                  нет ли уже issue с тем же заголовком
-                  «OSV: <пакет> <версия>» (поиск по тексту, например
-                  `gh issue list --search "OSV: <пакет>"`). Это защита от
-                  дублей: повторный запуск с той же находкой не должен
-                  создавать новый issue.
-               c. Для каждой НОВОЙ находки создай issue:
-                  `gh issue create --label osv-audit --title "OSV: <пакет> <версия>"`
-                  с телом: severity, описание уязвимости, ссылки, затронутые
-                  файлы, рекомендация (обновить до версии X).
-               d. Для находок, у которых issue уже есть, выведи список
-                  существующих issue и номер дубликата, который ты НЕ создал.
-            5. Итоговый вывод агента запиши в файл agent-output.md в корне
-               репозитория: дата запуска, находки (или их отсутствие), ссылки
-               на созданные/существующие issue.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -o pipefail
+          opencode run --auto \
+            --model moonshotai/kimi-k3.1-pro \
+            -- "$(cat .github/prompts/osv-audit.md)" | tee agent-output.md
 
       - name: Upload agent output
         if: always()
