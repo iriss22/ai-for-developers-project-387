@@ -1,0 +1,918 @@
+npm notice run frontend@0.0.0 npx
+npm notice run 'vitest' run src/pages/AdminPage.test.tsx
+
+ RUN  v5.1.0 /Users/user/IdeaProjects/hexlet/ai-for-developers-project-387/frontend
+
+ ❯ src/pages/AdminPage.test.tsx (20 tests | 4 failed) 2621ms
+   ❯ Админка: вкладка «Предстоящие встречи» (13)
+     × показывает записи только на сегодня в отдельном блоке без заголовка и общей заглушки 12ms
+     × разделяет сегодняшние и будущие записи без дублей и сохраняет их порядок 11ms
+     × показывает список записей с типом, интервалом в поясе владельца, гостем и заметкой 1010ms
+     × показывает сообщение об ошибке с кнопкой «Повторить» и загружает список повторно 1024ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/AdminPage.test.tsx > Админка: вкладка «Предстоящие встречи» > показывает записи только на сегодня в отдельном блоке без заголовка и общей заглушки
+Error: [2mexpect([22m[31melement[39m[2m).not.toBeInTheDocument()[22m
+
+[31mexpected document not to contain element, found <section
+  aria-label="Встречи начиная с завтра"
+  class="m_6d731127 mantine-Stack-root"
+  style="--stack-gap: var(--mantine-spacing-sm); --stack-align: stretch; --stack-justify: flex-start;"
+>
+  <div
+    class="m_e615b15f mantine-Card-root m_1b7284a3 mantine-Paper-root"
+    data-orientation="vertical"
+    data-with-border="true"
+    style="--card-padding: var(--mantine-spacing-md);"
+  >
+    <p
+      class="mantine-focus-auto m_b6d8b162 mantine-Text-root"
+      style="font-weight: 600;"
+    >
+      Интервью
+    </p>
+    <p
+      class="mantine-focus-auto m_b6d8b162 mantine-Text-root"
+      data-size="sm"
+      style="--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm);"
+    >
+      10.11.2026, 09:00–09:30 (Europe/Moscow)
+    </p>
+    <p
+      class="mantine-focus-auto m_b6d8b162 mantine-Text-root"
+      data-size="sm"
+      style="--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm);"
+    >
+      Гость утра
+    </p>
+    <p
+      class="mantine-focus-auto m_b6d8b162 mantine-Text-root"
+      data-size="sm"
+      style="--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm); color: var(--mantine-color-dimmed);"
+    >
+      guest1@example.com
+    </p>
+  </div>
+  <div
+    class="m_e615b15f mantine-Card-root m_1b7284a3 mantine-Paper-root"
+    data-orientation="vertical"
+    data-with-border="true"
+    style="--card-padding: var(--mantine-spacing-md);"
+  >
+    <p
+      class="mantine-focus-auto m_b6d8b162 mantine-Text-root"
+      style="font-weight: 600;"
+    >
+      Разбор резюме
+    </p>
+    <p
+      class="mantine-focus-auto m_b6d8b162 mantine-Text-root"
+      data-size="sm"
+      style="--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm);"
+    >
+      10.11.2026, 11:00–11:30 (Europe/Moscow)
+    </p>
+    <p
+      class="mantine-focus-auto m_b6d8b162 mantine-Text-root"
+      data-size="sm"
+      style="--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm);"
+    >
+      Гость дня
+    </p>
+    <p
+      class="mantine-focus-auto m_b6d8b162 mantine-Text-root"
+      data-size="sm"
+      style="--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm); color: var(--mantine-color-dimmed);"
+    >
+      guest2@example.com
+    </p>
+  </div>
+</section> instead[39m
+ ❯ src/pages/AdminPage.test.tsx:198:11
+    196|     expect(
+    197|       screen.queryByRole('region', { name: 'Встречи начиная с завтра' …
+    198|     ).not.toBeInTheDocument()
+       |           ^
+    199|   })
+    200|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/pages/AdminPage.test.tsx > Админка: вкладка «Предстоящие встречи» > разделяет сегодняшние и будущие записи без дублей и сохраняет их порядок
+AssertionError: expected [ 'Гость сегодня рано', …(3) ] to deeply equal [ 'Гость завтра', 'Гость послезавтра' ]
+
+- Expected
++ Received
+
+  [
++   "Гость сегодня рано",
++   "Гость сегодня позже",
+    "Гость завтра",
+    "Гость послезавтра",
+  ]
+
+ ❯ src/pages/AdminPage.test.tsx:243:7
+    241|         .getAllByText(/^Гость /)
+    242|         .map((node) => node.textContent),
+    243|     ).toEqual(['Гость завтра', 'Гость послезавтра'])
+       |       ^
+    244|     expect(screen.getAllByText('Сегодня рано')).toHaveLength(1)
+    245|     expect(screen.getAllByText('Сегодня позже')).toHaveLength(1)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/pages/AdminPage.test.tsx > Админка: вкладка «Предстоящие встречи» > показывает список записей с типом, интервалом в поясе владельца, гостем и заметкой
+TestingLibraryElementError: Found multiple elements with the text: Интервью
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<p[39m
+  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+  [33mstyle[39m=[32m"font-weight: 600;"[39m
+[36m>[39m
+  [0mИнтервью[0m
+[36m</p>[39m
+
+Ignored nodes: comments, script, style
+[36m<p[39m
+  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+  [33mstyle[39m=[32m"font-weight: 600;"[39m
+[36m>[39m
+  [0mИнтервью[0m
+[36m</p>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div[39m
+    [33mdata-mantine-shared-portal-node[39m=[32m"true"[39m
+    [33mdata-portal[39m=[32m"true"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mstyle[39m=[32m"display: none !important;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"m_9df02822 mantine-Modal-root"[39m
+        [33mid[39m=[32m"mantine-v1quppw1m"[39m
+        [33mstyle[39m=[32m"--modal-y-offset: 5dvh; --mb-z-index: 200;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"m_7485cace mantine-Container-root"[39m
+      [33mdata-size[39m=[32m"md"[39m
+      [33mdata-strategy[39m=[32m"block"[39m
+      [33mstyle[39m=[32m"--container-size: var(--container-size-md); padding-block: var(--mantine-spacing-xl);"[39m
+    [36m>[39m
+      [36m<h2[39m
+        [33mclass[39m=[32m"m_8a5d1357 mantine-Title-root"[39m
+        [33mdata-order[39m=[32m"2"[39m
+        [33mstyle[39m=[32m"--title-fw: var(--mantine-h2-font-weight); --title-lh: var(--mantine-h2-line-height); --title-fz: var(--mantine-h2-font-size);"[39m
+      [36m>[39m
+        [0mАдминка[0m
+      [36m</h2>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"m_89d60db1 mantine-Tabs-root"[39m
+        [33mdata-orientation[39m=[32m"horizontal"[39m
+        [33mdata-variant[39m=[32m"default"[39m
+        [33mid[39m=[32m"mantine-7dha6qx7q"[39m
+        [33mstyle[39m=[32m"--tabs-radius: var(--mantine-radius-default); --tabs-color: var(--mantine-color-blue-filled); margin-top: var(--mantine-spacing-md);"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33maria-orientation[39m=[32m"horizontal"[39m
+          [33mclass[39m=[32m"m_576c9d4 m_89d33d6d mantine-Tabs-list"[39m
+          [33mdata-orientation[39m=[32m"horizontal"[39m
+          [33mdata-variant[39m=[32m"default"[39m
+          [33mrole[39m=[32m"tablist"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"mantine-7dha6qx7q-panel-meeting-types"[39m
+            [33maria-selected[39m=[32m"false"[39m
+            [33mclass[39m=[32m"mantine-focus-auto m_539e827b m_4ec4dce6 mantine-Tabs-tab m_87cf2631 mantine-UnstyledButton-root"[39m
+            [33mdata-orientation[39m=[32m"horizontal"[39m
+            [33mdata-variant[39m=[32m"default"[39m
+            [33mid[39m=[32m"mantine-7dha6qx7q-tab-meeting-types"[39m
+            [33mrole[39m=[32m"tab"[39m
+            [33mtabindex[39m=[32m"-1"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"m_42bbd1ae mantine-Tabs-tabLabel"[39m
+            [36m>[39m
+              [0mТипы встреч[0m
+            [36m</span>[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"mantine-7dha6qx7q-panel-upcoming"[39m
+            [33maria-selected[39m=[32m"true"[39m
+            [33mclass[39m=[32m"mantine-focus-auto m_539e827b m_4ec4dce6 mantine-Tabs-tab m_87cf2631 mantine-UnstyledButton-root"[39m
+            [33mdata-active[39m=[32m"true"[39m
+            [33mdata-orientation[39m=[32m"horizontal"[39m
+            [33mdata-variant[39m=[32m"default"[39m
+            [33mid[39m=[32m"mantine-7dha6qx7q-tab-upcoming"[39m
+            [33mrole[39m=[32m"tab"[39m
+            [33mtabindex[39m=[32m"0"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"m_42bbd1ae mantine-Tabs-tabLabel"[39m
+            [36m>[39m
+              [0mПредстоящие встречи[0m
+            [36m</span>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-labelledby[39m=[32m"mantine-7dha6qx7q-tab-meeting-types"[39m
+          [33mclass[39m=[32m"m_b0c91715 mantine-Tabs-panel"[39m
+          [33mdata-orientation[39m=[32m"horizontal"[39m
+          [33mid[39m=[32m"mantine-7dha6qx7q-panel-meeting-types"[39m
+          [33mrole[39m=[32m"tabpanel"[39m
+          [33mstyle[39m=[32m"padding-top: var(--mantine-spacing-md); display: none;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"m_6d731127 mantine-Stack-root"[39m
+            [33mstyle[39m=[32m"--stack-gap: var(--mantine-spacing-md); --stack-align: stretch; --stack-justify: flex-start; display: none !important;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"m_4081bf90 mantine-Group-root"[39m
+              [33mstyle[39m=[32m"--group-gap: var(--mantine-spacing-md); --group-align: center; --group-justify: flex-end; --group-wrap: wrap;"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"mantine-focus-auto mantine-active m_77c9d27d mantine-Button-root m_87cf2631 mantine-UnstyledButton-root"[39m
+                [33mstyle[39m=[32m"--button-color: var(--mantine-color-white);"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"m_80f1301b mantine-Button-inner"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"m_811560b9 mantine-Button-label"[39m
+                  [36m>[39m
+                    [0mСоздать событие[0m
+                  [36m</span>[39m
+                [36m</span>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+              [33mstyle[39m=[32m"color: var(--mantine-color-dimmed);"[39m
+            [36m>[39m
+              [0mПока нет типов встреч[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-labelledby[39m=[32m"mantine-7dha6qx7q-tab-upcoming"[39m
+          [33mclass[39m=[32m"m_b0c91715 mantine-Tabs-panel"[39m
+          [33mdata-orientation[39m=[32m"horizontal"[39m
+          [33mid[39m=[32m"mantine-7dha6qx7q-panel-upcoming"[39m
+          [33mrole[39m=[32m"tabpanel"[39m
+          [33mstyle[39m=[32m"padding-top: var(--mantine-spacing-md);"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"m_6d731127 mantine-Stack-root"[39m
+            [33mstyle[39m=[32m"--stack-gap: var(--mantine-spacing-md); --stack-align: stretch; --stack-justify: flex-start;"[39m
+          [36m>[39m
+            [36m<section[39m
+              [33maria-label[39m=[32m"Сегодня"[39m
+              [33mclass[39m=[32m"m_6d731127 mantine-Stack-root"[39m
+              [33mstyle[39m=[32m"--stack-gap: var(--mantine-spacing-sm); --stack-align: stretch; --stack-justify: flex-start;"[39m
+            [36m>[39m
+              [36m<div[39m
+ ...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div[39m
+    [33mdata-mantine-shared-portal-node[39m=[32m"true"[39m
+    [33mdata-portal[39m=[32m"true"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mstyle[39m=[32m"display: none !important;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"m_9df02822 mantine-Modal-root"[39m
+        [33mid[39m=[32m"mantine-v1quppw1m"[39m
+        [33mstyle[39m=[32m"--modal-y-offset: 5dvh; --mb-z-index: 200;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"m_7485cace mantine-Container-root"[39m
+      [33mdata-size[39m=[32m"md"[39m
+      [33mdata-strategy[39m=[32m"block"[39m
+      [33mstyle[39m=[32m"--container-size: var(--container-size-md); padding-block: var(--mantine-spacing-xl);"[39m
+    [36m>[39m
+      [36m<h2[39m
+        [33mclass[39m=[32m"m_8a5d1357 mantine-Title-root"[39m
+        [33mdata-order[39m=[32m"2"[39m
+        [33mstyle[39m=[32m"--title-fw: var(--mantine-h2-font-weight); --title-lh: var(--mantine-h2-line-height); --title-fz: var(--mantine-h2-font-size);"[39m
+      [36m>[39m
+        [0mАдминка[0m
+      [36m</h2>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"m_89d60db1 mantine-Tabs-root"[39m
+        [33mdata-orientation[39m=[32m"horizontal"[39m
+        [33mdata-variant[39m=[32m"default"[39m
+        [33mid[39m=[32m"mantine-7dha6qx7q"[39m
+        [33mstyle[39m=[32m"--tabs-radius: var(--mantine-radius-default); --tabs-color: var(--mantine-color-blue-filled); margin-top: var(--mantine-spacing-md);"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33maria-orientation[39m=[32m"horizontal"[39m
+          [33mclass[39m=[32m"m_576c9d4 m_89d33d6d mantine-Tabs-list"[39m
+          [33mdata-orientation[39m=[32m"horizontal"[39m
+          [33mdata-variant[39m=[32m"default"[39m
+          [33mrole[39m=[32m"tablist"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"mantine-7dha6qx7q-panel-meeting-types"[39m
+            [33maria-selected[39m=[32m"false"[39m
+            [33mclass[39m=[32m"mantine-focus-auto m_539e827b m_4ec4dce6 mantine-Tabs-tab m_87cf2631 mantine-UnstyledButton-root"[39m
+            [33mdata-orientation[39m=[32m"horizontal"[39m
+            [33mdata-variant[39m=[32m"default"[39m
+            [33mid[39m=[32m"mantine-7dha6qx7q-tab-meeting-types"[39m
+            [33mrole[39m=[32m"tab"[39m
+            [33mtabindex[39m=[32m"-1"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"m_42bbd1ae mantine-Tabs-tabLabel"[39m
+            [36m>[39m
+              [0mТипы встреч[0m
+            [36m</span>[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"mantine-7dha6qx7q-panel-upcoming"[39m
+            [33maria-selected[39m=[32m"true"[39m
+            [33mclass[39m=[32m"mantine-focus-auto m_539e827b m_4ec4dce6 mantine-Tabs-tab m_87cf2631 mantine-UnstyledButton-root"[39m
+            [33mdata-active[39m=[32m"true"[39m
+            [33mdata-orientation[39m=[32m"horizontal"[39m
+            [33mdata-variant[39m=[32m"default"[39m
+            [33mid[39m=[32m"mantine-7dha6qx7q-tab-upcoming"[39m
+            [33mrole[39m=[32m"tab"[39m
+            [33mtabindex[39m=[32m"0"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"m_42bbd1ae mantine-Tabs-tabLabel"[39m
+            [36m>[39m
+              [0mПредстоящие встречи[0m
+            [36m</span>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-labelledby[39m=[32m"mantine-7dha6qx7q-tab-meeting-types"[39m
+          [33mclass[39m=[32m"m_b0c91715 mantine-Tabs-panel"[39m
+          [33mdata-orientation[39m=[32m"horizontal"[39m
+          [33mid[39m=[32m"mantine-7dha6qx7q-panel-meeting-types"[39m
+          [33mrole[39m=[32m"tabpanel"[39m
+          [33mstyle[39m=[32m"padding-top: var(--mantine-spacing-md); display: none;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"m_6d731127 mantine-Stack-root"[39m
+            [33mstyle[39m=[32m"--stack-gap: var(--mantine-spacing-md); --stack-align: stretch; --stack-justify: flex-start; display: none !important;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"m_4081bf90 mantine-Group-root"[39m
+              [33mstyle[39m=[32m"--group-gap: var(--mantine-spacing-md); --group-align: center; --group-justify: flex-end; --group-wrap: wrap;"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"mantine-focus-auto mantine-active m_77c9d27d mantine-Button-root m_87cf2631 mantine-UnstyledButton-root"[39m
+                [33mstyle[39m=[32m"--button-color: var(--mantine-color-white);"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"m_80f1301b mantine-Button-inner"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"m_811560b9 mantine-Button-label"[39m
+                  [36m>[39m
+                    [0mСоздать событие[0m
+                  [36m</span>[39m
+                [36m</span>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+              [33mstyle[39m=[32m"color: var(--mantine-color-dimmed);"[39m
+            [36m>[39m
+              [0mПока нет типов встреч[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-labelledby[39m=[32m"mantine-7dha6qx7q-tab-upcoming"[39m
+          [33mclass[39m=[32m"m_b0c91715 mantine-Tabs-panel"[39m
+          [33mdata-orientation[39m=[32m"horizontal"[39m
+          [33mid[39m=[32m"mantine-7dha6qx7q-panel-upcoming"[39m
+          [33mrole[39m=[32m"tabpanel"[39m
+          [33mstyle[39m=[32m"padding-top: var(--mantine-spacing-md);"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"m_6d731127 mantine-Stack-root"[39m
+            [33mstyle[39m=[32m"--stack-gap: var(--mantine-spacing-md); --stack-align: stretch; --stack-justify: flex-start;"[39m
+          [36m>[39m
+            [36m<section[39m
+              [33maria-label[39m=[32m"Сегодня"[39m
+              [33mclass[39m=[32m"m_6d731127 mantine-Stack-root"[39m
+              [33mstyle[39m=[32m"--stack-gap: var(--mantine-spacing-sm); --stack-align: stretch; --stack-justify: flex-start;"[39m
+            [36m>[39m
+              [36m<div[39m
+ ...
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/AdminPage.test.tsx:340:25
+    338|     await openUpcomingTab()
+    339|
+    340|     expect(await screen.findByText('Интервью')).toBeInTheDocument()
+       |                         ^
+    341|     expect(screen.getByText('10.11.2026, 09:00–09:30 (Europe/Moscow)')…
+    342|     expect(screen.getByText('Иван Петров')).toBeInTheDocument()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/pages/AdminPage.test.tsx > Админка: вкладка «Предстоящие встречи» > показывает сообщение об ошибке с кнопкой «Повторить» и загружает список повторно
+TestingLibraryElementError: Found multiple elements with the text: Иван Петров
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<p[39m
+  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+  [33mdata-size[39m=[32m"sm"[39m
+  [33mstyle[39m=[32m"--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm);"[39m
+[36m>[39m
+  [0mИван Петров[0m
+[36m</p>[39m
+
+Ignored nodes: comments, script, style
+[36m<p[39m
+  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+  [33mdata-size[39m=[32m"sm"[39m
+  [33mstyle[39m=[32m"--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm);"[39m
+[36m>[39m
+  [0mИван Петров[0m
+[36m</p>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div[39m
+    [33mdata-mantine-shared-portal-node[39m=[32m"true"[39m
+    [33mdata-portal[39m=[32m"true"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mstyle[39m=[32m"display: none !important;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"m_9df02822 mantine-Modal-root"[39m
+        [33mid[39m=[32m"mantine-kuq2x1zc3"[39m
+        [33mstyle[39m=[32m"--modal-y-offset: 5dvh; --mb-z-index: 200;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"m_7485cace mantine-Container-root"[39m
+      [33mdata-size[39m=[32m"md"[39m
+      [33mdata-strategy[39m=[32m"block"[39m
+      [33mstyle[39m=[32m"--container-size: var(--container-size-md); padding-block: var(--mantine-spacing-xl);"[39m
+    [36m>[39m
+      [36m<h2[39m
+        [33mclass[39m=[32m"m_8a5d1357 mantine-Title-root"[39m
+        [33mdata-order[39m=[32m"2"[39m
+        [33mstyle[39m=[32m"--title-fw: var(--mantine-h2-font-weight); --title-lh: var(--mantine-h2-line-height); --title-fz: var(--mantine-h2-font-size);"[39m
+      [36m>[39m
+        [0mАдминка[0m
+      [36m</h2>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"m_89d60db1 mantine-Tabs-root"[39m
+        [33mdata-orientation[39m=[32m"horizontal"[39m
+        [33mdata-variant[39m=[32m"default"[39m
+        [33mid[39m=[32m"mantine-7bf3k514e"[39m
+        [33mstyle[39m=[32m"--tabs-radius: var(--mantine-radius-default); --tabs-color: var(--mantine-color-blue-filled); margin-top: var(--mantine-spacing-md);"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33maria-orientation[39m=[32m"horizontal"[39m
+          [33mclass[39m=[32m"m_576c9d4 m_89d33d6d mantine-Tabs-list"[39m
+          [33mdata-orientation[39m=[32m"horizontal"[39m
+          [33mdata-variant[39m=[32m"default"[39m
+          [33mrole[39m=[32m"tablist"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"mantine-7bf3k514e-panel-meeting-types"[39m
+            [33maria-selected[39m=[32m"false"[39m
+            [33mclass[39m=[32m"mantine-focus-auto m_539e827b m_4ec4dce6 mantine-Tabs-tab m_87cf2631 mantine-UnstyledButton-root"[39m
+            [33mdata-orientation[39m=[32m"horizontal"[39m
+            [33mdata-variant[39m=[32m"default"[39m
+            [33mid[39m=[32m"mantine-7bf3k514e-tab-meeting-types"[39m
+            [33mrole[39m=[32m"tab"[39m
+            [33mtabindex[39m=[32m"-1"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"m_42bbd1ae mantine-Tabs-tabLabel"[39m
+            [36m>[39m
+              [0mТипы встреч[0m
+            [36m</span>[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"mantine-7bf3k514e-panel-upcoming"[39m
+            [33maria-selected[39m=[32m"true"[39m
+            [33mclass[39m=[32m"mantine-focus-auto m_539e827b m_4ec4dce6 mantine-Tabs-tab m_87cf2631 mantine-UnstyledButton-root"[39m
+            [33mdata-active[39m=[32m"true"[39m
+            [33mdata-orientation[39m=[32m"horizontal"[39m
+            [33mdata-variant[39m=[32m"default"[39m
+            [33mid[39m=[32m"mantine-7bf3k514e-tab-upcoming"[39m
+            [33mrole[39m=[32m"tab"[39m
+            [33mtabindex[39m=[32m"0"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"m_42bbd1ae mantine-Tabs-tabLabel"[39m
+            [36m>[39m
+              [0mПредстоящие встречи[0m
+            [36m</span>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-labelledby[39m=[32m"mantine-7bf3k514e-tab-meeting-types"[39m
+          [33mclass[39m=[32m"m_b0c91715 mantine-Tabs-panel"[39m
+          [33mdata-orientation[39m=[32m"horizontal"[39m
+          [33mid[39m=[32m"mantine-7bf3k514e-panel-meeting-types"[39m
+          [33mrole[39m=[32m"tabpanel"[39m
+          [33mstyle[39m=[32m"padding-top: var(--mantine-spacing-md); display: none;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"m_6d731127 mantine-Stack-root"[39m
+            [33mstyle[39m=[32m"--stack-gap: var(--mantine-spacing-md); --stack-align: stretch; --stack-justify: flex-start; display: none !important;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"m_4081bf90 mantine-Group-root"[39m
+              [33mstyle[39m=[32m"--group-gap: var(--mantine-spacing-md); --group-align: center; --group-justify: flex-end; --group-wrap: wrap;"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"mantine-focus-auto mantine-active m_77c9d27d mantine-Button-root m_87cf2631 mantine-UnstyledButton-root"[39m
+                [33mstyle[39m=[32m"--button-color: var(--mantine-color-white);"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"m_80f1301b mantine-Button-inner"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"m_811560b9 mantine-Button-label"[39m
+                  [36m>[39m
+                    [0mСоздать событие[0m
+                  [36m</span>[39m
+                [36m</span>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+              [33mstyle[39m=[32m"color: var(--mantine-color-dimmed);"[39m
+            [36m>[39m
+              [0mПока нет типов встреч[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-labelledby[39m=[32m"mantine-7bf3k514e-tab-upcoming"[39m
+          [33mclass[39m=[32m"m_b0c91715 mantine-Tabs-panel"[39m
+          [33mdata-orientation[39m=[32m"horizontal"[39m
+          [33mid[39m=[32m"mantine-7bf3k514e-panel-upcoming"[39m
+          [33mrole[39m=[32m"tabpanel"[39m
+          [33mstyle[39m=[32m"padding-top: var(--mantine-spacing-md);"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"m_6d731127 mantine-Stack-root"[39m
+            [33mstyle[39m=[32m"--stack-gap: var(--mantine-spacing-md); --stack-align: stretch; --stack-justify: flex-start;"[39m
+          [36m>[39m
+            [36m<section[39m
+              [33maria-label[39m=[32m"Сегодня"[39m
+              [33mclass[39m=[32m"m_6d731127 mantine-Stack-root"[39m
+              [33mstyle[39m=[32m"--stack-gap: var(--mantine-spacing-sm); --stack-align: stretch; --stack-justify: flex-start;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"m_e615b15f mantine-Card-root m_1b7284a3 mantine-Paper-root"[39m
+                [33mdata-orientation[39m=[32m"vertical"[39m
+                [33mdata-with-border[39m=[32m"true"[39m
+                [33mstyle[39m=[32m"--card-padding: var(--mantine-spacing-md);"[39m
+              [36m>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+                  [33mstyle[39m=[32m"font-weight: 600;"[39m
+                [36m>[39m
+                  [0mИнтервью[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+                  [33mdata-size[39m=[32m"sm"[39m
+                  [33mstyle[39m=[32m"--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm);"[39m
+                [36m>[39m
+                  [0m10.11.2026, 09:00–09:30 (Europe/Moscow)[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+                  [33mdata-size[39m=[32m"sm"[39m
+                  [33mstyle[39m=[32m"--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm);"[39m
+                [36m>[39m
+                  [0mИван Петров[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+                  [33mdata-size[39m=[32m"sm"[39m
+                  [33mstyle[39m=[32m"--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm); color: var(--mantine-color-dimmed);"[39m
+                [36m>[39m
+                  [0mivan@example.com[0m
+                [36m</p>[39m
+              [36m</div>[39m
+            [36m</section>[39m
+            [36m<section[39m
+              [33maria-label[39m=[32m"Встречи начиная с завтра"[39m
+              [33mclass[39m=[32m"m_6d731127 mantine-Stack-root"[39m
+              [33mstyle[39m=[32m"--stack-gap: var(--mantine-spacing-sm); --stack-align: stretch; --stack-justify: flex-start;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"m_e615b15f mantine-Card-root m_1b7284a3 mantine-Paper-root"[39m
+                [33mdata-orientation[39m=[32m"vertical"[39m
+                [33mdata-with-border[39m=[32m"true"[39m
+                [33mstyle[39m=[32m"--card-padding: var(--mantine-spacing-md);"[39m
+              [36m>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+                  [33mstyle[39m=[32m"font-weight: 600;"[39m
+                [36m>[39m
+                  [0mИнтервью[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+                  [33mdata-size[39m=[32m"sm"[39m
+                  [33mstyle[39m=[32m"--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm);"[39m
+                [36m>[39m
+                  [0m10.11.2026, 09:00–09:30 (Europe/Moscow)[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+                  [33mdata-size[39m=[32m"sm"[39m
+                  [33mstyle[39m=[32m"--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm);"[39m
+                [36m>[39m
+                  [0mИван Петров[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+                  [33mdata-size[39m=[32m"sm"[39m
+                  [33mstyle[39m=[32m"--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm); color: var(--mantine-color-dimmed);"[39m
+                [36m>[39m
+                  [0mivan@example.com[0m
+                [36m</p>[39m
+              [36m</div>[39m
+            [36m</section>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div[39m
+    [33mdata-mantine-shared-portal-node[39m=[32m"true"[39m
+    [33mdata-portal[39m=[32m"true"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mstyle[39m=[32m"display: none !important;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"m_9df02822 mantine-Modal-root"[39m
+        [33mid[39m=[32m"mantine-kuq2x1zc3"[39m
+        [33mstyle[39m=[32m"--modal-y-offset: 5dvh; --mb-z-index: 200;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"m_7485cace mantine-Container-root"[39m
+      [33mdata-size[39m=[32m"md"[39m
+      [33mdata-strategy[39m=[32m"block"[39m
+      [33mstyle[39m=[32m"--container-size: var(--container-size-md); padding-block: var(--mantine-spacing-xl);"[39m
+    [36m>[39m
+      [36m<h2[39m
+        [33mclass[39m=[32m"m_8a5d1357 mantine-Title-root"[39m
+        [33mdata-order[39m=[32m"2"[39m
+        [33mstyle[39m=[32m"--title-fw: var(--mantine-h2-font-weight); --title-lh: var(--mantine-h2-line-height); --title-fz: var(--mantine-h2-font-size);"[39m
+      [36m>[39m
+        [0mАдминка[0m
+      [36m</h2>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"m_89d60db1 mantine-Tabs-root"[39m
+        [33mdata-orientation[39m=[32m"horizontal"[39m
+        [33mdata-variant[39m=[32m"default"[39m
+        [33mid[39m=[32m"mantine-7bf3k514e"[39m
+        [33mstyle[39m=[32m"--tabs-radius: var(--mantine-radius-default); --tabs-color: var(--mantine-color-blue-filled); margin-top: var(--mantine-spacing-md);"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33maria-orientation[39m=[32m"horizontal"[39m
+          [33mclass[39m=[32m"m_576c9d4 m_89d33d6d mantine-Tabs-list"[39m
+          [33mdata-orientation[39m=[32m"horizontal"[39m
+          [33mdata-variant[39m=[32m"default"[39m
+          [33mrole[39m=[32m"tablist"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"mantine-7bf3k514e-panel-meeting-types"[39m
+            [33maria-selected[39m=[32m"false"[39m
+            [33mclass[39m=[32m"mantine-focus-auto m_539e827b m_4ec4dce6 mantine-Tabs-tab m_87cf2631 mantine-UnstyledButton-root"[39m
+            [33mdata-orientation[39m=[32m"horizontal"[39m
+            [33mdata-variant[39m=[32m"default"[39m
+            [33mid[39m=[32m"mantine-7bf3k514e-tab-meeting-types"[39m
+            [33mrole[39m=[32m"tab"[39m
+            [33mtabindex[39m=[32m"-1"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"m_42bbd1ae mantine-Tabs-tabLabel"[39m
+            [36m>[39m
+              [0mТипы встреч[0m
+            [36m</span>[39m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"mantine-7bf3k514e-panel-upcoming"[39m
+            [33maria-selected[39m=[32m"true"[39m
+            [33mclass[39m=[32m"mantine-focus-auto m_539e827b m_4ec4dce6 mantine-Tabs-tab m_87cf2631 mantine-UnstyledButton-root"[39m
+            [33mdata-active[39m=[32m"true"[39m
+            [33mdata-orientation[39m=[32m"horizontal"[39m
+            [33mdata-variant[39m=[32m"default"[39m
+            [33mid[39m=[32m"mantine-7bf3k514e-tab-upcoming"[39m
+            [33mrole[39m=[32m"tab"[39m
+            [33mtabindex[39m=[32m"0"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"m_42bbd1ae mantine-Tabs-tabLabel"[39m
+            [36m>[39m
+              [0mПредстоящие встречи[0m
+            [36m</span>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-labelledby[39m=[32m"mantine-7bf3k514e-tab-meeting-types"[39m
+          [33mclass[39m=[32m"m_b0c91715 mantine-Tabs-panel"[39m
+          [33mdata-orientation[39m=[32m"horizontal"[39m
+          [33mid[39m=[32m"mantine-7bf3k514e-panel-meeting-types"[39m
+          [33mrole[39m=[32m"tabpanel"[39m
+          [33mstyle[39m=[32m"padding-top: var(--mantine-spacing-md); display: none;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"m_6d731127 mantine-Stack-root"[39m
+            [33mstyle[39m=[32m"--stack-gap: var(--mantine-spacing-md); --stack-align: stretch; --stack-justify: flex-start; display: none !important;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"m_4081bf90 mantine-Group-root"[39m
+              [33mstyle[39m=[32m"--group-gap: var(--mantine-spacing-md); --group-align: center; --group-justify: flex-end; --group-wrap: wrap;"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"mantine-focus-auto mantine-active m_77c9d27d mantine-Button-root m_87cf2631 mantine-UnstyledButton-root"[39m
+                [33mstyle[39m=[32m"--button-color: var(--mantine-color-white);"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"m_80f1301b mantine-Button-inner"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"m_811560b9 mantine-Button-label"[39m
+                  [36m>[39m
+                    [0mСоздать событие[0m
+                  [36m</span>[39m
+                [36m</span>[39m
+              [36m</button>[39m
+            [36m</div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+              [33mstyle[39m=[32m"color: var(--mantine-color-dimmed);"[39m
+            [36m>[39m
+              [0mПока нет типов встреч[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-labelledby[39m=[32m"mantine-7bf3k514e-tab-upcoming"[39m
+          [33mclass[39m=[32m"m_b0c91715 mantine-Tabs-panel"[39m
+          [33mdata-orientation[39m=[32m"horizontal"[39m
+          [33mid[39m=[32m"mantine-7bf3k514e-panel-upcoming"[39m
+          [33mrole[39m=[32m"tabpanel"[39m
+          [33mstyle[39m=[32m"padding-top: var(--mantine-spacing-md);"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"m_6d731127 mantine-Stack-root"[39m
+            [33mstyle[39m=[32m"--stack-gap: var(--mantine-spacing-md); --stack-align: stretch; --stack-justify: flex-start;"[39m
+          [36m>[39m
+            [36m<section[39m
+              [33maria-label[39m=[32m"Сегодня"[39m
+              [33mclass[39m=[32m"m_6d731127 mantine-Stack-root"[39m
+              [33mstyle[39m=[32m"--stack-gap: var(--mantine-spacing-sm); --stack-align: stretch; --stack-justify: flex-start;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"m_e615b15f mantine-Card-root m_1b7284a3 mantine-Paper-root"[39m
+                [33mdata-orientation[39m=[32m"vertical"[39m
+                [33mdata-with-border[39m=[32m"true"[39m
+                [33mstyle[39m=[32m"--card-padding: var(--mantine-spacing-md);"[39m
+              [36m>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+                  [33mstyle[39m=[32m"font-weight: 600;"[39m
+                [36m>[39m
+                  [0mИнтервью[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+                  [33mdata-size[39m=[32m"sm"[39m
+                  [33mstyle[39m=[32m"--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm);"[39m
+                [36m>[39m
+                  [0m10.11.2026, 09:00–09:30 (Europe/Moscow)[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+                  [33mdata-size[39m=[32m"sm"[39m
+                  [33mstyle[39m=[32m"--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm);"[39m
+                [36m>[39m
+                  [0mИван Петров[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+                  [33mdata-size[39m=[32m"sm"[39m
+                  [33mstyle[39m=[32m"--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm); color: var(--mantine-color-dimmed);"[39m
+                [36m>[39m
+                  [0mivan@example.com[0m
+                [36m</p>[39m
+              [36m</div>[39m
+            [36m</section>[39m
+            [36m<section[39m
+              [33maria-label[39m=[32m"Встречи начиная с завтра"[39m
+              [33mclass[39m=[32m"m_6d731127 mantine-Stack-root"[39m
+              [33mstyle[39m=[32m"--stack-gap: var(--mantine-spacing-sm); --stack-align: stretch; --stack-justify: flex-start;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"m_e615b15f mantine-Card-root m_1b7284a3 mantine-Paper-root"[39m
+                [33mdata-orientation[39m=[32m"vertical"[39m
+                [33mdata-with-border[39m=[32m"true"[39m
+                [33mstyle[39m=[32m"--card-padding: var(--mantine-spacing-md);"[39m
+              [36m>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+                  [33mstyle[39m=[32m"font-weight: 600;"[39m
+                [36m>[39m
+                  [0mИнтервью[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+                  [33mdata-size[39m=[32m"sm"[39m
+                  [33mstyle[39m=[32m"--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm);"[39m
+                [36m>[39m
+                  [0m10.11.2026, 09:00–09:30 (Europe/Moscow)[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+                  [33mdata-size[39m=[32m"sm"[39m
+                  [33mstyle[39m=[32m"--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm);"[39m
+                [36m>[39m
+                  [0mИван Петров[0m
+                [36m</p>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mantine-focus-auto m_b6d8b162 mantine-Text-root"[39m
+                  [33mdata-size[39m=[32m"sm"[39m
+                  [33mstyle[39m=[32m"--text-fz: var(--mantine-font-size-sm); --text-lh: var(--mantine-line-height-sm); color: var(--mantine-color-dimmed);"[39m
+                [36m>[39m
+                  [0mivan@example.com[0m
+                [36m</p>[39m
+              [36m</div>[39m
+            [36m</section>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/pages/AdminPage.test.tsx:386:25
+    384|     fireEvent.click(screen.getByRole('button', { name: 'Повторить' }))
+    385|
+    386|     expect(await screen.findByText('Иван Петров')).toBeInTheDocument()
+       |                         ^
+    387|   })
+    388| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 16 passed (20)
+   Start at  22:27:55
+   Duration  3.08s (tests 87%, environment 6%, import 4%, transform 2%, setup 1%)
+

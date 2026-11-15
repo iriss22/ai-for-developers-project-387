@@ -1,0 +1,11 @@
+npm notice run frontend@0.0.0 npx
+npm notice run 'vitest' run src/pages/AdminPage.test.tsx
+
+ RUN  v5.1.0 /Users/user/IdeaProjects/hexlet/ai-for-developers-project-387/frontend
+
+
+ Test Files  1 passed (1)
+      Tests  20 passed (20)
+   Start at  22:27:59
+   Duration  984ms (tests 64%, environment 17%, import 12%, setup 4%, transform 3%)
+
