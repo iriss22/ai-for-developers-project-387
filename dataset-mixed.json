@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1,
+    "start": "2026-11-15T14:00:00+03:00",
+    "guestName": "Анна Смирнова",
+    "guestEmail": "anna@example.com",
+    "note": null,
+    "meetingType": { "id": 1, "name": "Планёрка", "durationMinutes": 30 }
+  },
+  {
+    "id": 2,
+    "start": "2026-11-15T16:30:00+03:00",
+    "guestName": "Игорь Петров",
+    "guestEmail": "igor@example.com",
+    "note": "По вопросам сметы",
+    "meetingType": { "id": 2, "name": "Консультация", "durationMinutes": 60 }
+  },
+  {
+    "id": 3,
+    "start": "2026-11-16T10:00:00+03:00",
+    "guestName": "Мария Козлова",
+    "guestEmail": "maria@example.com",
+    "note": null,
+    "meetingType": { "id": 1, "name": "Планёрка", "durationMinutes": 30 }
+  },
+  {
+    "id": 4,
+    "start": "2026-11-20T12:00:00+03:00",
+    "guestName": "Дмитрий Орлов",
+    "guestEmail": "dmitry@example.com",
+    "note": null,
+    "meetingType": { "id": 2, "name": "Консультация", "durationMinutes": 60 }
+  }
+]

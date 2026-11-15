@@ -1,0 +1,28 @@
+uid=1_0 RootWebArea "Календарь звонков" url="http://localhost:4173/admin"
+  uid=1_1 banner
+    uid=1_2 link "Календарь звонков" url="http://localhost:4173/"
+    uid=1_4 link "Админка" url="http://localhost:4173/admin"
+    uid=1_6 link "Записаться" url="http://localhost:4173/book"
+  uid=1_8 main
+    uid=1_9 heading "Админка" level="2"
+    uid=1_10 tab "Типы встреч" selectable
+    uid=1_11 tab "Предстоящие встречи" focusable focused selectable selected
+    uid=2_0 region "Сегодня"
+      uid=2_1 "Планёрка"
+      uid=2_2 "15.11.2026, 14:00–14:30 (Europe/Moscow)"
+      uid=2_3 "Анна Смирнова"
+      uid=2_4 "anna@example.com"
+      uid=2_5 "Консультация"
+      uid=2_6 "15.11.2026, 16:30–17:30 (Europe/Moscow)"
+      uid=2_7 "Игорь Петров"
+      uid=2_8 "igor@example.com"
+      uid=2_9 "По вопросам сметы"
+    uid=2_10 region "Встречи начиная с завтра"
+      uid=2_11 "Планёрка"
+      uid=2_12 "16.11.2026, 10:00–10:30 (Europe/Moscow)"
+      uid=2_13 "Мария Козлова"
+      uid=2_14 "maria@example.com"
+      uid=2_15 "Консультация"
+      uid=2_16 "20.11.2026, 12:00–13:00 (Europe/Moscow)"
+      uid=2_17 "Дмитрий Орлов"
+      uid=2_18 "dmitry@example.com"

@@ -1,0 +1,10 @@
+uid=6_0 RootWebArea "Календарь звонков" url="http://localhost:4173/admin"
+  uid=6_1 banner
+    uid=6_2 link "Календарь звонков" url="http://localhost:4173/"
+    uid=6_4 link "Админка" url="http://localhost:4173/admin"
+    uid=6_6 link "Записаться" url="http://localhost:4173/book"
+  uid=6_8 main
+    uid=6_9 heading "Админка" level="2"
+    uid=6_10 tab "Типы встреч" selectable
+    uid=6_11 tab "Предстоящие встречи" focusable focused selectable selected
+    uid=7_0 "Предстоящих встреч нет"
