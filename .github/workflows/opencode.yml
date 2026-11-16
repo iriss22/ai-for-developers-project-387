@@ -82,7 +82,7 @@ jobs:
         run: echo "${{ github.event.issue.number || github.event.pull_request.number }}" > oc-budget
       - name: Upload budget marker
         if: steps.limit.outputs.skip != 'true'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa12 # v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: oc-budget-${{ github.event.issue.number || github.event.pull_request.number }}
           path: oc-budget
