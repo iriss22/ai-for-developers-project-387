@@ -2,8 +2,10 @@
 # На каждый открытый или переоткрытый issue запускает OpenCode, который
 # по скиллу triage разбирает обращение: ставит triage-метку и пишет
 # краткий комментарий с обоснованием и следующим шагом.
-# Обращения, которые уже в триаже (есть triage-метка) или созданы ботами,
-# пропускаются на уровне job-if — до секретов и раннера не доходят.
+# Обращения, которые уже в триаже (есть triage-метка), созданы ботами или
+# пришли не от доверенного автора (список — repository variable
+# TRIAGE_TRUSTED_AUTHORS), пропускаются на уровне job-if — до секретов
+# и раннера не доходят, модель не вызывается.
 name: opencode-triage
 
 on:
@@ -21,11 +23,18 @@ permissions:
 
 jobs:
   triage:
-    # Пропускаем ботов (release-please, Renovate и т.п.) и обращения, по
-    # которым триаж уже сделан: в них есть одна из triage-меток из
-    # docs/agents/triage-labels.md.
+    # Пропускаем ботов (release-please, Renovate и т.п.), обращения, по
+    # которым триаж уже сделан (есть одна из triage-меток из
+    # docs/agents/triage-labels.md), и обращения от авторов вне списка
+    # доверенных. Доверенные авторы — repository variable
+    # TRIAGE_TRUSTED_AUTHORS (JSON-массив логинов, настраивается в
+    # Settings → Secrets and variables → Actions → Variables).
+    # Проверка типа User недостаточна: ей обладает любой посторонний
+    # аккаунт, поэтому сверяемся с явным списком до доступа к секретам.
     if: |
       github.event.issue.user.type == 'User' &&
+      contains(fromJSON(vars.TRIAGE_TRUSTED_AUTHORS || '[]'),
+               github.event.issue.user.login) &&
       !contains(github.event.issue.labels.*.name, 'needs-triage') &&
       !contains(github.event.issue.labels.*.name, 'needs-info') &&
       !contains(github.event.issue.labels.*.name, 'ready-for-agent') &&
