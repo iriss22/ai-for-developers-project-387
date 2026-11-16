@@ -34,8 +34,10 @@ jobs:
       # id-token нужен OpenCode для обмена OIDC-токена на installation token GitHub App
       id-token: write
       contents: read
-      # Ревьюеру нужно читать PR и писать в нём один итоговый комментарий
+      # Ревьюеру нужно читать PR и писать в нём итоговый комментарий
+      # и комментарий-отказ при исчерпании бюджета
       pull-requests: write
+      issues: write
       # Статусный чек opencode-review на head-коммите: ветка защищена требованием
       # этого чека, мердж без завершённого ревью невозможен
       statuses: write
@@ -46,26 +48,16 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      # Предел запусков: если ветку гоняют многократно, модель не вызываем.
-      # Считаем предыдущие прогоны этого workflow по этому PR, в которых модель
-      # реально вызывалась (conclusion success/failure/cancelled). Служебные
-      # прогоны — skipped (фильтр по автору) и action_required (ожидание
-      # аппрува) — не тратят лимит: модель в них не вызывалась.
+      # Предел запусков: общий бюджет с интерактивными командами /oc
+      # (см. scripts/oc-budget.sh): 10 вызовов модели на PR суммарно.
+      # Считаем по истории Actions до запуска OpenCode; при исчерпании
+      # лимита модель не вызывается, а чек получает `success` с пояснением —
+      # защита ветки не должна блокировать мердж бесконечно из-за частых пушей.
       - name: Check review run limit
         id: limit
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          pr=${{ github.event.pull_request.number }}
-          runs=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/opencode-review.yml/runs?per_page=100" \
-            --jq "[.workflow_runs[] | select(.id != ${{ github.run_id }} and .event == \"pull_request\" and any(.pull_requests[]; .number == $pr) and (.conclusion == \"success\" or .conclusion == \"failure\" or .conclusion == \"cancelled\"))] | length")
-          echo "previous-runs=$runs" >> "$GITHUB_OUTPUT"
-          if [ "$runs" -ge 3 ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "Лимит запусков авторевью на PR исчерпан ($runs >= 3), модель не вызывается"
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
+        run: .github/scripts/oc-budget.sh "${{ github.event.pull_request.number }}" 10 "${{ github.run_id }}"
 
       - name: Run OpenCode review
         if: steps.limit.outputs.skip != 'true'
@@ -129,4 +121,23 @@ jobs:
             gh api "repos/$GITHUB_REPOSITORY/statuses/$sha" \
               -f state="$review_state" -f context=opencode-review \
               -f description="$description" >/dev/null
+          fi
+          # Отказ по бюджету публикуем комментарием: причина, SHA, ссылка на
+          # логи. Дедуп по SHA: на каждый head-коммит — один такой комментарий.
+          if [ "$SKIP" = "true" ]; then
+            pr=${{ github.event.pull_request.number }}
+            log_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/${{ github.run_id }}"
+            if ! gh api "repos/$GITHUB_REPOSITORY/issues/$pr/comments?per_page=50" \
+              --jq '.[].body' | grep -q "limit_exhausted.*$sha"; then
+              gh issue comment "$pr" --body "$(cat <<EOF
+          **opencode: limit_exhausted — нужен человек**
+
+          Бюджет запусков агента на PR #$pr исчерпан (10 попыток суммарно с командами /oc). Модель не вызывалась.
+
+          - Причина: \`limit_exhausted\`
+          - SHA: $sha
+          - Логи: $log_url
+          EOF
+              )"
+            fi
           fi

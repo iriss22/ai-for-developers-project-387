@@ -2,7 +2,16 @@
 # Документация: https://opencode.ai/docs/github/
 # Доступ к репозиторию и комментариям даёт installation token GitHub App opencode-agent
 # через обмен OIDC-токена; GITHUB_TOKEN здесь только на чтение через checkout.
+#
+# Бюджет: модель вызывается максимум 10 раз на issue/PR — суммарно с
+# авторевью (opencode-review.yml). Счётчик ведётся по истории Actions
+# (scripts/oc-budget.sh) до вызова модели; при исчерпании публикуется
+# отказ limit_exhausted с SHA и ссылкой на логи, модель не вызывается.
 name: opencode
+
+# run-name несёт номер issue/PR: по нему oc-budget.sh привязывает
+# issue_comment-прогоны (в API у них пустой pull_requests) к бюджету.
+run-name: oc #${{ github.event.issue.number || github.event.pull_request.number }}
 
 on:
   # jactionlint ignore=dangerous-triggers: триггер требуется OpenCode для комментариев;
@@ -24,8 +33,9 @@ permissions:
 
 jobs:
   opencode:
-    # Только участники репозитория могут запускать агента: issue_comment
+    # Только участники репозитория могут запускать агент: issue_comment
     # выполняется в контексте default-ветки с id-token и секретами.
+    # Не допущенный запрос бюджет не расходует — его прогоны в счёт не идут.
     if: |
       (github.event.comment.author_association == 'OWNER' ||
        github.event.comment.author_association == 'MEMBER' ||
@@ -41,14 +51,29 @@ jobs:
       # id-token нужен OpenCode для обмена OIDC-токена на installation token GitHub App
       id-token: write
       contents: read
+    outputs:
+      skip: ${{ steps.limit.outputs.skip }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410b181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           persist-credentials: false
 
+      # Бюджет запусков: история Actions — источник, который installation
+      # token агента переписать не может (шаг выполняется с read-only
+      # GITHUB_TOKEN, до вызова модели). Re-run и оборванные прогоны
+      # расходуют попытки (см. scripts/oc-budget.sh).
+      - name: Check oc budget
+        id: limit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .github/scripts/oc-budget.sh \
+          "${{ github.event.issue.number || github.event.pull_request.number }}" \
+          10 "${{ github.run_id }}"
+
       - name: Run OpenCode
+        if: steps.limit.outputs.skip != 'true'
         uses: anomalyco/opencode/github@810c0eba1a7348036f8bdf61e6632d0c36c6876c # v1.19.5
         env:
           MOONSHOT_API_KEY: ${{ secrets.MOONSHOT_API_KEY }}
@@ -61,3 +86,77 @@ jobs:
           # Более дешёвых в списке нет — kimi-k2.7-code и прочие на free-тарифе
           # platform.kimi.ai недоступны (404 «Not found the model … or Permission denied»).
           model: moonshotai/kimi-k3.1-pro
+
+  # Итог публикует отдельное задание без модели: оно запускается всегда,
+  # в том числе когда агента убил таймаут (тогда шаги opencode уже не
+  # выполнятся) и получает время после остановки агента.
+  report:
+    needs: opencode
+    if: always() && needs.opencode.result != 'success'
+    runs-on: ubuntu-latest
+    # Публикация итога — короткая: несколько API-вызовов и один комментарий
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      # Комментарий-отчёт в issue/PR
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Publish result
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          SKIP: ${{ needs.opencode.outputs.skip }}
+          RESULT: ${{ needs.opencode.result }}
+          RUN_ID: ${{ github.run_id }}
+          TIMEOUT_MINUTES: "90"
+        run: |
+          set -euo pipefail
+          log_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$RUN_ID"
+
+          # Последний SHA: для PR — head ветки PR, для обычного issue —
+          # голова default-ветки.
+          if gh api "repos/$GITHUB_REPOSITORY/pulls/$NUMBER" >/dev/null 2>&1; then
+            head_sha="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$NUMBER" --jq '.head.sha')"
+          else
+            head_sha="$(gh api "repos/$GITHUB_REPOSITORY/branches/$(gh api "repos/$GITHUB_REPOSITORY" --jq '.default_branch')" --jq '.commit.sha')"
+          fi
+
+          if [ "$SKIP" = "true" ]; then
+            reason=limit_exhausted
+            summary="Бюджет запусков агента на issue/PR #$NUMBER исчерпан (10 попыток). Модель не вызывалась."
+          else
+            # Смотрим шаги прогона, чтобы отличить сбой подготовки (infra)
+            # от прерывания по таймауту/отмены (timeout) и прочих ошибок
+            # агента (agent_failed). Неопределённые случаи — по логам.
+            steps_json="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/jobs" \
+              --jq '[.jobs[] | select(.name == "opencode") | .steps[] | {name, conclusion}]')"
+            if [ "$RESULT" = "cancelled" ]; then
+              reason=timeout
+              summary="Прогон прерван (отмена или таймаут $TIMEOUT_MINUTES мин) до завершения агента."
+            elif ! jq -e 'all(.[]; .conclusion != "failure")' <<<"$steps_json" >/dev/null; then
+              failed_step="$(jq -r '[.[] | select(.conclusion == "failure") | .name] | join(", ")' <<<"$steps_json")"
+              case "$failed_step" in
+                # Сбой до запуска модели: окружение, checkout, ключ.
+                "Checkout repository") reason=infra ;;
+                *) reason=agent_failed ;;
+              esac
+              summary="Прогон упал на шаге: $failed_step. Детали — в логах по ссылке ниже."
+            else
+              reason=agent_failed
+              summary="Агент завершился с ошибкой. Детали — в логах по ссылке ниже."
+            fi
+          fi
+
+          gh issue comment "$NUMBER" --body "$(cat <<EOF
+          **opencode: $reason — нужен человек**
+
+          $summary
+
+          - Причина: \`$reason\`
+          - SHA: $head_sha
+          - Логи: $log_url
+
+          Следующее действие выбирает человек; автоматический цикл исправлений не запускается.
+          EOF
+          )"
