@@ -32,16 +32,17 @@ select_expr="(.conclusion == \"success\" or .conclusion == \"failure\" or .concl
 runs=0
 for workflow in opencode.yml opencode-review.yml; do
   page=1
+  total=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/$workflow/runs?per_page=1" --jq '.total_count')
   while :; do
     batch=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/$workflow/runs?per_page=100&page=$page" \
       --jq "[.workflow_runs[]
         | select(.id != $current_run_id
             and (any(.pull_requests[]; .number == $number)
-                 or (.name | contains(\"#$number\")))
+                 # Точное имя: «oc #23» относится к #23, «oc #230» — нет
+                 or .name == \"oc #$number\")
             and $select_expr)
         | .run_attempt] | add // 0")
     runs=$((runs + batch))
-    total=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/$workflow/runs?per_page=1" --jq '.total_count')
     if [ "$((page * 100))" -ge "$total" ]; then
       break
     fi
