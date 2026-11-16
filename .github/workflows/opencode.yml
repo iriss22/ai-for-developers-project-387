@@ -9,12 +9,11 @@
 # отказ limit_exhausted с SHA и ссылкой на логи, модель не вызывается.
 name: opencode
 
-# run-name несёт номер issue/PR: по нему oc-budget.sh привязывает
-# issue_comment-прогоны (в API у них пустой pull_requests) к бюджету.
-# Оператор || в run-name не поддерживается — склеиваем два взаимоисключающих
-# номера: у issue_comment заполнен issue.number, у pull_request_review_comment —
-# pull_request.number, второй в каждом случае рендерится пустой строкой.
-run-name: oc #${{ github.event.issue.number }}
+# Номер issue/PR прогон несёт в артефакте oc-budget-<n> (шаг Record budget
+# marker ниже): run-name с github.event не работает (выражение молча
+# откатывается на имя workflow), а в API runs у issue_comment пустой
+# pull_requests. Артефакт недоступен на запись installation token'у агента —
+# счётчик так не подделать.
 
 on:
   # jactionlint ignore=dangerous-triggers: триггер требуется OpenCode для комментариев;
@@ -75,6 +74,19 @@ jobs:
           "${{ github.event.issue.number || github.event.pull_request.number }}" \
           10 "${{ github.run_id }}"
 
+      # Маркер бюджета: связывает этот run с issue/PR для oc-budget.sh.
+      # Кладём до запуска модели: прогон, допущенный счётчиком, расходует
+      # попытку независимо от того, чем он закончился (успех, сбой, таймаут).
+      - name: Record budget marker
+        if: steps.limit.outputs.skip != 'true'
+        run: echo "${{ github.event.issue.number || github.event.pull_request.number }}" > oc-budget
+      - name: Upload budget marker
+        if: steps.limit.outputs.skip != 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa12 # v4.6.2
+        with:
+          name: oc-budget-${{ github.event.issue.number || github.event.pull_request.number }}
+          path: oc-budget
+
       - name: Run OpenCode
         if: steps.limit.outputs.skip != 'true'
         uses: anomalyco/opencode/github@810c0eba1a7348036f8bdf61e6632d0c36c6876c # v1.19.5
@@ -95,9 +107,10 @@ jobs:
   # выполнятся) и получает время после остановки агента.
   report:
     needs: opencode
-    # Публикуем итог только если агент реально запускался и не справился:
-    # skipped (фильтр по автору/команде) и success докладывать нечего.
-    if: always() && (needs.opencode.result == 'failure' || needs.opencode.result == 'cancelled')
+    # Публикуем итог при исчерпании бюджета (skip=true; джоба opencode при
+    # этом success — шаги пропущены) и когда агент запускался, но не справился
+    # (failure/cancelled). skipped (фильтр по автору/команде) — докладывать нечего.
+    if: always() && (needs.opencode.outputs.skip == 'true' || needs.opencode.result == 'failure' || needs.opencode.result == 'cancelled')
     runs-on: ubuntu-latest
     # Публикация итога — короткая: несколько API-вызовов и один комментарий
     timeout-minutes: 10
