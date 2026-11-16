@@ -29,7 +29,10 @@ jobs:
       !contains(fromJSON('["release-please[bot]", "renovate[bot]"]'),
                 github.event.pull_request.user.login)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Тайм-аут 90 минут: как и в opencode.yml — ревьюер читает REVIEW.md,
+    # тянет дифф и историю через gh, пишет вердикт; 30 минут регулярно
+    # не хватало, прогон обрывался по таймауту без результата.
+    timeout-minutes: 90
     permissions:
       # id-token нужен OpenCode для обмена OIDC-токена на installation token GitHub App
       id-token: write
