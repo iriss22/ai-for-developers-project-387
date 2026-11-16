@@ -60,7 +60,10 @@ jobs:
         id: limit
         env:
           GH_TOKEN: ${{ github.token }}
-        run: .github/scripts/oc-budget.sh "${{ github.event.pull_request.number }}" 10 "${{ github.run_id }}"
+        run: |
+          .github/scripts/oc-budget.sh \
+            "${{ github.event.pull_request.number }}" \
+            10 "${{ github.run_id }}"
 
       - name: Run OpenCode review
         if: steps.limit.outputs.skip != 'true'

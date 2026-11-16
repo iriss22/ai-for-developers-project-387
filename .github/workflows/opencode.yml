@@ -70,9 +70,12 @@ jobs:
         id: limit
         env:
           GH_TOKEN: ${{ github.token }}
-        run: .github/scripts/oc-budget.sh \
-          "${{ github.event.issue.number || github.event.pull_request.number }}" \
-          10 "${{ github.run_id }}"
+        # Внимание: multiline plain-скаляр склеивает строки вместе с
+        # обратными слешами — аргументы ломаются. Только блок |.
+        run: |
+          .github/scripts/oc-budget.sh \
+            "${{ github.event.issue.number || github.event.pull_request.number }}" \
+            10 "${{ github.run_id }}"
 
       # Маркер бюджета: связывает этот run с issue/PR для oc-budget.sh.
       # Кладём до запуска модели: прогон, допущенный счётчиком, расходует
