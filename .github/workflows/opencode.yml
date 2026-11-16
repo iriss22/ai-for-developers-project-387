@@ -105,6 +105,8 @@ jobs:
       - name: Publish result
         env:
           GH_TOKEN: ${{ github.token }}
+          # В задании нет checkout — без GH_REPO gh не находит репозиторий
+          GH_REPO: ${{ github.repository }}
           NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
           SKIP: ${{ needs.opencode.outputs.skip }}
           RESULT: ${{ needs.opencode.result }}
@@ -137,8 +139,8 @@ jobs:
             elif ! jq -e 'all(.[]; .conclusion != "failure")' <<<"$steps_json" >/dev/null; then
               failed_step="$(jq -r '[.[] | select(.conclusion == "failure") | .name] | join(", ")' <<<"$steps_json")"
               case "$failed_step" in
-                # Сбой до запуска модели: окружение, checkout, ключ.
-                "Checkout repository") reason=infra ;;
+                # Сбой до запуска модели: окружение, раннер, checkout, ключ.
+                "Checkout repository"|"Set up job") reason=infra ;;
                 *) reason=agent_failed ;;
               esac
               summary="Прогон упал на шаге: $failed_step. Детали — в логах по ссылке ниже."
