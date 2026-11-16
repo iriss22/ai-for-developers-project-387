@@ -11,7 +11,10 @@ name: opencode
 
 # run-name несёт номер issue/PR: по нему oc-budget.sh привязывает
 # issue_comment-прогоны (в API у них пустой pull_requests) к бюджету.
-run-name: oc #${{ github.event.issue.number || github.event.pull_request.number }}
+# Оператор || в run-name не поддерживается — склеиваем два взаимоисключающих
+# номера: у issue_comment заполнен issue.number, у pull_request_review_comment —
+# pull_request.number, второй в каждом случае рендерится пустой строкой.
+run-name: oc #${{ github.event.issue.number }}${{ github.event.pull_request.number }}
 
 on:
   # jactionlint ignore=dangerous-triggers: триггер требуется OpenCode для комментариев;
