@@ -14,7 +14,7 @@ name: opencode
 # Оператор || в run-name не поддерживается — склеиваем два взаимоисключающих
 # номера: у issue_comment заполнен issue.number, у pull_request_review_comment —
 # pull_request.number, второй в каждом случае рендерится пустой строкой.
-run-name: oc #${{ github.event.issue.number }}${{ github.event.pull_request.number }}
+run-name: oc-budget-e2e-test
 
 on:
   # jactionlint ignore=dangerous-triggers: триггер требуется OpenCode для комментариев;
