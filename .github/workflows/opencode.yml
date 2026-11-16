@@ -92,7 +92,9 @@ jobs:
   # выполнятся) и получает время после остановки агента.
   report:
     needs: opencode
-    if: always() && needs.opencode.result != 'success'
+    # Публикуем итог только если агент реально запускался и не справился:
+    # skipped (фильтр по автору/команде) и success докладывать нечего.
+    if: always() && (needs.opencode.result == 'failure' || needs.opencode.result == 'cancelled')
     runs-on: ubuntu-latest
     # Публикация итога — короткая: несколько API-вызовов и один комментарий
     timeout-minutes: 10
