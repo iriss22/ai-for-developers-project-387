@@ -77,15 +77,17 @@ jobs:
       # Маркер бюджета: связывает этот run с issue/PR для oc-budget.sh.
       # Кладём до запуска модели: прогон, допущенный счётчиком, расходует
       # попытку независимо от того, чем он закончился (успех, сбой, таймаут).
+      # Файл — вне репозитория: в рабочей копии он мешает git checkout,
+      # который делает экшен OpenCode перед работой агента.
       - name: Record budget marker
         if: steps.limit.outputs.skip != 'true'
-        run: echo "${{ github.event.issue.number || github.event.pull_request.number }}" > oc-budget
+        run: echo "${{ github.event.issue.number || github.event.pull_request.number }}" > "$RUNNER_TEMP/oc-budget"
       - name: Upload budget marker
         if: steps.limit.outputs.skip != 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: oc-budget-${{ github.event.issue.number || github.event.pull_request.number }}
-          path: oc-budget
+          path: ${{ runner.temp }}/oc-budget
 
       - name: Run OpenCode
         if: steps.limit.outputs.skip != 'true'
