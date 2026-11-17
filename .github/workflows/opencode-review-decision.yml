@@ -1,0 +1,72 @@
+# OpenCode: фиксирует человеческий вердикт ревью в общем статусе PR.
+#
+# Контекст opencode-review — не «прогон робота», а решение по ревью PR.
+# Робот пишет в него approve/changes requested из opencode-review.yml; этот
+# workflow пишет туда же вердикт человека, если робот не справился или его
+# решение нужно перезаписать. Поэтому для мерджа достаточно ревью робота
+# или человека — зелёный статус не появляется без реального вердикта.
+name: opencode-review-decision
+
+on:
+  pull_request_review:
+    types: [submitted, dismissed]
+
+# Ревью подряд не отменяем: каждый вердикт доводим до статуса, порядок
+# сохраняется GitHub'ом.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  human-review-decision:
+    # Только доверенные люди решают судьбу PR. Комментарии без вердикта и
+    # реакции ботов игнорируются: робот пишет статус из opencode-review.yml.
+    if: |
+      github.event.review.user.type == 'User' &&
+      (github.event.review.author_association == 'OWNER' ||
+       github.event.review.author_association == 'MEMBER' ||
+       github.event.review.author_association == 'COLLABORATOR')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      # Нужно выставить commit status opencode-review на head SHA PR
+      statuses: write
+    steps:
+      - name: Record human review decision
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ACTION: ${{ github.event.action }}
+          REVIEW_STATE: ${{ github.event.review.state }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REVIEW_URL: ${{ github.event.review.html_url }}
+        run: |
+          set -euo pipefail
+
+          if [ "$ACTION" = "dismissed" ]; then
+            status_state=pending
+            description="Ревью человека отклонено — нужен новый вердикт"
+          else
+            case "$REVIEW_STATE" in
+              approved)
+                status_state=success
+                description="Ревью человека: approve"
+                ;;
+              changes_requested)
+                status_state=failure
+                description="Ревью человека: changes requested"
+                ;;
+              *)
+                echo "Пропуск: событие ревью без решения ($REVIEW_STATE)"
+                exit 0
+                ;;
+            esac
+          fi
+
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA" \
+            -f state="$status_state" \
+            -f context=opencode-review \
+            -f description="$description" \
+            -f target_url="$REVIEW_URL" >/dev/null
