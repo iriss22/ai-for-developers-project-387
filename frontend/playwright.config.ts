@@ -26,6 +26,10 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${FRONTEND_PORT}`,
     trace: 'retain-on-failure',
+    // Скриншоты каждого сценария (не только падений): CI сохраняет их
+    // в артефакт вместе с head SHA — это доказательство браузерной
+    // проверки именно того коммита, который уходит в PR.
+    screenshot: 'on',
   },
   projects: [
     {

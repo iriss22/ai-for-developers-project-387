@@ -55,3 +55,27 @@ jobs:
           mise run lint:commits -- --from "$from" --to HEAD
 
       - run: mise run check
+
+      # Доказательство браузерной проверки (основной и соседний сценарии
+      # e2e): скриншоты Playwright и точный head SHA, на котором прогнана
+      # проверка. Артефакт неотделим от прогона и его коммита — перед мерджем
+      # head SHA PR сверяется с тем, что записан здесь (см. opencode-review).
+      - name: Save browser check evidence
+        if: always()
+        run: |
+          mkdir -p /tmp/browser-check
+          cp -r frontend/test-results/. /tmp/browser-check/ 2>/dev/null || true
+          {
+            echo "head_sha=$GITHUB_SHA"
+            echo "run_url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "run_id=$GITHUB_RUN_ID"
+          } > /tmp/browser-check/MANIFEST.txt
+      - name: Upload browser check evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          # Имя содержит SHA: сверка перед мерджем — по точному совпадению
+          # имени артефакта с pull_request.head.sha.
+          name: browser-check-${{ github.sha }}
+          path: /tmp/browser-check
+          if-no-files-found: warn
