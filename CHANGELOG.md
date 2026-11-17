@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.3.0](https://github.com/iriss22/ai-for-developers-project-387/compare/v0.2.0...v0.3.0) (2026-11-17)
+
+
+### Features
+
+* **ci:** артефакт браузерной проверки с head SHA и сверка перед мерджем ([#22](https://github.com/iriss22/ai-for-developers-project-387/issues/22)) ([a441469](https://github.com/iriss22/ai-for-developers-project-387/commit/a4414694d09088173236917053787389221d024a))
+* **ci:** общий бюджет запусков агента на PR с отказом limit_exhausted ([#22](https://github.com/iriss22/ai-for-developers-project-387/issues/22)) ([2684206](https://github.com/iriss22/ai-for-developers-project-387/commit/2684206cab080ef35516cefa568aedd542ecb538))
+
+
+### Bug Fixes
+
+* **ci:** задать GH_REPO в report-джобе opencode ([#22](https://github.com/iriss22/ai-for-developers-project-387/issues/22)) ([e5a2785](https://github.com/iriss22/ai-for-developers-project-387/commit/e5a2785051d1d3ce4433e3d99862fac7d7f80210))
+* **ci:** исправить опечатку в SHA пина actions/checkout ([#22](https://github.com/iriss22/ai-for-developers-project-387/issues/22)) ([83c8aa5](https://github.com/iriss22/ai-for-developers-project-387/commit/83c8aa554f6ac08c4a806e88a3d4e6d0e2dba4ea))
+* **ci:** маркер бюджета в артефакте вместо run-name ([#22](https://github.com/iriss22/ai-for-developers-project-387/issues/22)) ([153b9c5](https://github.com/iriss22/ai-for-developers-project-387/commit/153b9c570b1e11ce84c44f2c4d38150b298a6275))
+* **ci:** маркер бюджета вне репозитория — не мешает checkout агента ([#22](https://github.com/iriss22/ai-for-developers-project-387/issues/22)) ([5fda9c8](https://github.com/iriss22/ai-for-developers-project-387/commit/5fda9c818a6b510dc1bb42827995e878be4ea7a3))
+* **ci:** не публиковать итог когда джоба агента skipped ([#22](https://github.com/iriss22/ai-for-developers-project-387/issues/22)) ([948f09f](https://github.com/iriss22/ai-for-developers-project-387/commit/948f09f60d894aca32b65e9da5dbf716dcab27e4))
+* **ci:** опечатка в SHA пина actions/upload-artifact ([#22](https://github.com/iriss22/ai-for-developers-project-387/issues/22)) ([3ca0bbb](https://github.com/iriss22/ai-for-developers-project-387/commit/3ca0bbb3dc2afe9b9c053f79fc68d59250cfc614))
+* **ci:** передача аргументов oc-budget.sh — блок вместо plain-скаляра ([#22](https://github.com/iriss22/ai-for-developers-project-387/issues/22)) ([13f8f33](https://github.com/iriss22/ai-for-developers-project-387/commit/13f8f3310b2d7846eb97f5cd424c4897aaec9675))
+* **ci:** поднять таймаут авторевью до 90 минут ([#22](https://github.com/iriss22/ai-for-developers-project-387/issues/22)) ([161b224](https://github.com/iriss22/ai-for-developers-project-387/commit/161b22406d3e2462ccccb5cfc5ecc06e9b56ea05))
+* **ci:** принимать человеческое ревью при исчерпании бюджета ([#16](https://github.com/iriss22/ai-for-developers-project-387/issues/16)) ([#26](https://github.com/iriss22/ai-for-developers-project-387/issues/26)) ([300aec0](https://github.com/iriss22/ai-for-developers-project-387/commit/300aec0172744897aae6e9f9940e499de9eea65e))
+* **ci:** сверка браузерной проверки после ревью — без гонки с CI ([#22](https://github.com/iriss22/ai-for-developers-project-387/issues/22)) ([cf92a7e](https://github.com/iriss22/ai-for-developers-project-387/commit/cf92a7ea90a0ff8bf1ab516d598f348294d2e6ef))
+* **ci:** склеивание номера issue/PR в run-name вместо || ([#22](https://github.com/iriss22/ai-for-developers-project-387/issues/22)) ([f026f91](https://github.com/iriss22/ai-for-developers-project-387/commit/f026f917a4c3e39bbd6126fe74eb7d1ff0a561ef))
+* **ci:** точное сопоставление run-name с номером issue в счётчике бюджета ([#22](https://github.com/iriss22/ai-for-developers-project-387/issues/22)) ([f880707](https://github.com/iriss22/ai-for-developers-project-387/commit/f880707bb4b97ced14f74f86d5bde22c541d19e1))
+* **ci:** триаж только для доверенных авторов по списку из переменной ([#6](https://github.com/iriss22/ai-for-developers-project-387/issues/6)) ([bcc0122](https://github.com/iriss22/ai-for-developers-project-387/commit/bcc01221a6e9a380ee3543265c7334550a18002b))
+
 ## [0.2.0](https://github.com/iriss22/ai-for-developers-project-387/compare/v0.1.0...v0.2.0) (2026-11-15)
 
 ### Features
