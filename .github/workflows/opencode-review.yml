@@ -65,6 +65,36 @@ jobs:
             "${{ github.event.pull_request.number }}" \
             10 "${{ github.run_id }}"
 
+      # Браузерная проверка: сверяем head SHA PR с артефактом browser-check-<sha>
+      # из CI. Скриншоты основного и соседнего сценариев и SHA лежат в
+      # артефакте прогона ci.yml на этом коммите. Совпадение — чек success:
+      # проверена ровно та версия, которая мержится. Нет совпадения — failure:
+      # либо CI ещё не догнал head, либо проверка от другого коммита. Шаг
+      # стоит до запуска модели: сверка не зависит от вердикта ревью.
+      - name: Verify browser check evidence on head SHA
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          state=failure
+          description="Артефакт browser-check не найден для head SHA"
+          run_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?per_page=30" \
+            --jq "[.workflow_runs[] | select(.head_sha == \"$HEAD_SHA\" and .conclusion == \"success\")] | first | .id // empty")
+          if [ -n "$run_id" ]; then
+            if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts?per_page=100" \
+              --jq '.artifacts[].name' | grep -qx "browser-check-$HEAD_SHA"; then
+              state=success
+              description="Браузерная проверка подтверждена для head SHA (artifacts run $run_id)"
+            else
+              description="Прогон CI есть, но артефакт browser-check-$HEAD_SHA отсутствует"
+            fi
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA" \
+            -f state="$state" -f context=browser-check \
+            -f description="$description" \
+            -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >/dev/null
+
       - name: Run OpenCode review
         if: steps.limit.outputs.skip != 'true'
         uses: anomalyco/opencode/github@810c0eba1a7348036f8bdf61e6632d0c36c6876c # v1.19.5
@@ -147,32 +177,3 @@ jobs:
               )"
             fi
           fi
-
-      # Браузерная проверка: сверяем head SHA PR с артефактом browser-check-<sha>
-      # из CI. Скриншоты основного и соседнего сценариев и SHA лежат в
-      # артефакте прогона ci.yml на этом коммите. Совпадение — чек success:
-      # проверена ровно та версия, которая мержится. Нет совпадения — failure:
-      # либо CI ещё не догнал head, либо проверка от другого коммита.
-      - name: Verify browser check evidence on head SHA
-        if: always()
-        env:
-          GH_TOKEN: ${{ github.token }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          state=failure
-          description="Артефакт browser-check не найден для head SHA"
-          run_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?per_page=30" \
-            --jq "[.workflow_runs[] | select(.head_sha == \"$HEAD_SHA\" and .conclusion == \"success\")] | first | .id // empty")
-          if [ -n "$run_id" ]; then
-            if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts?per_page=100" \
-              --jq '.artifacts[].name' | grep -qx "browser-check-$HEAD_SHA"; then
-              state=success
-              description="Браузерная проверка подтверждена для head SHA (artifacts run $run_id)"
-            else
-              description="Прогон CI есть, но артефакт browser-check-$HEAD_SHA отсутствует"
-            fi
-          fi
-          gh api "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA" \
-            -f state="$state" -f context=browser-check \
-            -f description="$description" \
-            -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >/dev/null
